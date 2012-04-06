@@ -56,13 +56,12 @@ function ceil(x) {
     }
     n_lbl = n;
     x0 = floor(x_min / dx) * dx;
-    x_min -= dx / 2;
-    x_max += dx / 2;
+    x_min -= dx / 4;
+    x_max += dx / 4;
     for (n = 0; n <= n_lbl; n++) {
 	x = x0 + n * dx;
 	if ( x >= x_min && x <= x_max ) {
-	    printf("%g ", x);
+	    printf("%g\n", x);
 	}
     }
-    printf("\n");
 }
