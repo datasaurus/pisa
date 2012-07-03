@@ -31,21 +31,29 @@ x0=$1
 y0=$2
 w=$3
 h=$4
+y1=`echo $y0 + $h | bc -l`
 w_px=$5
 LEFT=${LEFT:-"0"}
 TOP=${TOP:-"0"}
 h_px=`echo "$w_px / $w * $h" | bc -l`
 printf '
 <svg
+    %s
     x="%.1f"
     y="%.1f"
     width="%.1f"
     height="%.1f"
-    viewBox="%.1f %.1f %.1f %.1f"
-    %s
+    viewBox="0.0 0.0 %.1f %.1f"
 >
+'   "$SVG_ATT"		\
+    $LEFT		\
+    $TOP		\
+    $w_px		\
+    $h_px		\
+    $w $h
+printf '
 <g
-    transform="matrix(1 0 0 -1 0 %.1f)"
+    transform="matrix(1 0 0 -1 %.1f %.1f)"
 >
-' $LEFT $TOP $w_px $h_px $x0 $y0 $w $h "$SVG_ATT" $h
+' -$x0 $y1
 exit
