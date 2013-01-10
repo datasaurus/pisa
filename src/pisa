@@ -1,10 +1,10 @@
 #!/bin/sh
-
+#
 # This script creates an svg element that uses cartesian coordinates.
 #
 # Usage:
-#	svg_wrap.sh [-d] [-x display_x] [-y display_y] [-w pixels] \
-#		-- x0 y0 width height command [args]
+#	cart_svg [-d] [-x pixels] [-y pixels] [-w pixels] [--]
+#		x0 y0 width height command [args]
 # where:
 #	-d	requests an svg document. Otherwise, output will be an svg
 #		element.
@@ -53,11 +53,15 @@
 #
 ########################################################################
 
-# Usage reminder, for error messages
-err_usage() {
-    printf "$0 [-d] [-x x_dpy] [-y y_dpy] [-w pixels] --"
-    printf " x0 y0 width height command [args]\n"
-    exit 1
+# Check for numerical value
+check_num() {
+    name="$1"
+    val="$2"
+    if ! printf '%g' $val > /dev/null 2>&1
+    then
+	printf "$0: expected number for %s, got %s\n" "$name" "$val" 1>&2
+	exit 1
+    fi
 }
 
 # _dpy denotes display coordinates.
@@ -67,51 +71,50 @@ err_usage() {
 x_dpy="0"
 y_dpy="0"
 w_dpy="800.0"
+document=
 
 # Parse command line
-args=`getopt dxyw: $*`
-if [ $? != 0 ]
-then
-    err_usage
-fi
-set -- $args
-for i
+while getopts :dxyw: opt
 do
-    case "$i"
+    case $opt
     in
-	"-d")
+	d)
 	    document="1"
-	    shift
 	    ;;
-	"-x")
-	    shift
-	    x_dpy=$1
-	    shift
+	x)
+	    x_dpy=$OPTARG
+	    check_num "display x coordinate" $x_dpy
 	    ;;
-	"-y")
-	    shift
-	    y_dpy=$1
-	    shift
+	y)
+	    y_dpy=$OPTARG
+	    check_num "display y coordinate" $y_dpy
 	    ;;
-	"-w")
-	    shift
-	    w_dpy=$1
-	    shift
+	w)
+	    w_dpy=$OPTARG
+	    check_num "display width" $w_dpy
 	    ;;
-	"--")
-	    shift
-	    break
+	\?)
+	    echo "$0: unknown option $OPTARG" 1>&2
 	    ;;
     esac
 done
+shift `expr $OPTIND - 1`
 if [ $# -lt 5 ]
 then
-    err_usage
+    {
+	printf "Usage: $0 [-d] [-x x_dpy] [-y y_dpy] [-w pixels] --"
+	printf " x0 y0 width height command [args]\n"
+    } 1>&2
+    exit 1
 fi
 x0=$1; shift
+check_num "x coordinate of plot origin" $x0
 y0=$1; shift
+check_num "y coordinate of plot origin" $y0
 w=$1; shift
+check_num "plot width" $w
 h=$1; shift
+check_num "plot height" $h
 h_dpy=`echo "$w_dpy * $h / $w" | bc -l`
 y1=`echo "$y0 + $h" | bc -l`
 
