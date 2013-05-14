@@ -133,7 +133,7 @@ printf '<svg
     width="%f"
     height="%f"
     viewBox="0.0 0.0 %.1f %.1f" >\n' $x_dpy $y_dpy $w_dpy $h_dpy $w $h
-printf '<g transform=\"matrix(1 0 0 -1 %.1f %.1f)\">\n' \
+printf '<g transform="matrix(1 0 0 -1 %.1f %.1f)">\n' \
     `echo "-1 * $x0" | bc -l` $y1
 
 eval "$@"
