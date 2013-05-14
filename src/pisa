@@ -6,7 +6,7 @@
 #	cart_svg [-d] [-x pixels] [-y pixels] [-w pixels] [--]
 #		x0 y0 width height command [args]
 # where:
-#	-d	requests an svg document. Otherwise, output will be an svg
+#	-d	requests svg document. Otherwise, output will be svg
 #		element.
 #	-x	specifies the x attribute of the svg element. Ignored
 #		if -d option is present.
