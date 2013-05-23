@@ -254,7 +254,7 @@ BEGIN {
     printf "    preserveAspectRatio=\"none\"\n>\n";
 
     printf "<clipPath id=\"PlotArea\">\n";
-    printf "    <rect x=\"0.0\" y=\"0.0\"\n";
+    printf "    <rect x=\"%.1f\" y=\"%.1f\"\n", x0, y0;
     printf "            width=\"%.1f\" height=\"%.1f\" />\n", dx, dy;
     print "</clipPath>"
     printf "<g transform=\"matrix(1 0 0 -1 %.1f %.1f)\"", -x0, y0 + dy;
