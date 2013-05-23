@@ -63,6 +63,75 @@
 #	end		indicates no more input. The process prints
 #			SVG code to finish the document, and exits.
 
+# This function returns the next power of 10 greater than or equal to the
+# magnitude of x.
+
+function pow10(x) {
+    if (x == 0.0) {
+	return 1.0e-100;
+    } else if (x > 0.0) {
+	n = int(log(x) / log(10) + 0.5);
+	return exp(n * log(10.0));
+    } else {
+	n = int(log(-x) / log(10) + 0.5);
+	return -exp(n * log(10.0));
+    }
+}
+
+# floor and ceiling
+function floor(x) {
+    return (x > 0) ? int(x) : int(x) - 1;
+}
+function ceil(x) {
+    return (x > 0) ? int(x) + 1 : int(x);
+}
+
+# Find at least n_min values from x_min to x_max with intervals suitable for
+# axis labels.
+#
+# Initialize the interval dx to a power of 10 larger than the interval from
+# x_max - x_min, then try smaller steps until there are at least n_lbl label
+# points. The interval will be a multiple of 10, 5, or 2 times some power of 10.
+#
+# Return the points to label.
+
+function axis_nlbl(x_min, x_max, n_min)
+{
+    x_min = $1;
+    x_max = $2;
+    n_lbl = $3;
+    dx = pow10(x_max - x_min);
+    while (1) {
+	n = ceil((x_max - x_min) / dx);
+	if ( n > n_lbl ) {
+	    break;
+	}
+	dx *= 0.5;
+	n = ceil((x_max - x_min) / dx);
+	if ( n > n_lbl ) {
+	    break;
+	}
+	dx *= 0.4;
+	n = ceil((x_max - x_min) / dx);
+	if ( n > n_lbl ) {
+	    break;
+	}
+	dx *= 0.5;
+    }
+    n_lbl = n;
+    x0 = floor(x_min / dx) * dx;
+    x_min -= dx / 4;
+    x_max += dx / 4;
+    r = "";
+    for (n = 0; n <= n_lbl; n++) {
+	x = x0 + n * dx;
+	if ( x >= x_min && x <= x_max ) {
+	    r = r + sprintf(" %g\n", x);
+	}
+    }
+    return r;
+}
+
 BEGIN {
     FS = "=";
     plotting = 0;
@@ -181,15 +250,27 @@ BEGIN {
     print "<svg ";
     printf "    x=\"%.1f\" y=\"%.1f\"\n", left, top;
     printf "    width=\"%.1f\" height=\"%.1f\"\n", width, height;
-    printf "    viewBox=\"0.0 0.0 %.1f %.1f\"\n>\n", dx, dy;
+    printf "    viewBox=\"0.0 0.0 %.1f %.1f\"\n", dx, dy;
+    printf "    preserveAspectRatio=\"none\"\n>\n";
 
-    printf "<g transform=\"matrix(1 0 0 -1 %.1f %.1f)\">\n", -x0, y0 + dy;
+    printf "<clipPath id=\"PlotArea\">\n";
+    printf "    <rect x=\"0.0\" y=\"0.0\"\n";
+    printf "            width=\"%.1f\" height=\"%.1f\" />\n", dx, dy;
+    print "</clipPath>"
+    printf "<g transform=\"matrix(1 0 0 -1 %.1f %.1f)\"", -x0, y0 + dy;
+    print " clip-path=\"url(#PlotArea)\">"
 
+    $0 = "";
     plotting = 1;
 }
 /end_plot/ {
     print "</g>";
     print "</svg>";
+    printf "<rect x=\"%.1f\" y=\"%.1f\"\n", left, top
+    printf "    width=\"%.1f\" height=\"%.1f\"\n", width, height
+    printf "    fill=\"none\" stroke=\"black\" />\n"
+    $0 = "";
+    plotting = 0;
 }
 /end/ {
     print "</svg>";
