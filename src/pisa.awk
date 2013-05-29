@@ -31,9 +31,6 @@
 # Standard input may also include:
 #
 #	height pixels
-#	x_label string ...
-#	y_label string ...
-#	caption string ...
 #
 # where:
 #	
@@ -51,11 +48,8 @@
 #			Document width will be left + width + right
 #			Document height will be top + height + bottom
 #	font_sz		font size for labels, in display units
-#	x_label		x axis label, centered below the x axis
 #	x_fmt		format for x axis labels
-#	y_label		y axis label, centered below the y axis
 #	y_fmt		format for y axis labels
-#	caption		more text, centered below the x label.
 #	start_plot	tells the process to just pass input to output.
 #			Input should be SVG code for items in the plot.
 #	end_plot	indicates no more plot input. The process prints
@@ -221,42 +215,42 @@ BEGIN {
 /width/ {
     width = $2 + 0.0;
     if ( width <= 0.0 ) {
-	printf "width must be positive\n";
+	printf "width must be positive\n" > "/dev/stderr";
 	exit 1;
     }
 }
 /height/ {
     height = $2 + 0.0;
     if ( height <= 0.0 ) {
-	printf "height must be positive\n";
+	printf "height must be positive\n" > "/dev/stderr";
 	exit 1;
     }
 }
 /top/ {
     top = $2 + 0.0;
-    if ( top <= 0.0 ) {
-	printf "top margin must be positive\n";
+    if ( top < 0.0 ) {
+	printf "top margin cannot be negative\n" > "/dev/stderr";
 	exit 1;
     }
 }
 /right/ {
     right = $2 + 0.0;
-    if ( right <= 0.0 ) {
-	printf "right margin must be positive\n";
+    if ( right < 0.0 ) {
+	printf "right margin cannot be negative\n" > "/dev/stderr";
 	exit 1;
     }
 }
 /bottom/ {
     bottom = $2 + 0.0;
-    if ( bottom <= 0.0 ) {
-	printf "bottom margin must be positive\n";
+    if ( bottom < 0.0 ) {
+	printf "bottom margin cannot be negative\n" > "/dev/stderr";
 	exit 1;
     }
 }
 /left/ {
     left = $2 + 0.0;
-    if ( left <= 0.0 ) {
-	printf "left margin must be positive\n";
+    if ( left < 0.0 ) {
+	printf "left margin cannot be negative\n" > "/dev/stderr";
 	exit 1;
     }
 }
@@ -275,53 +269,41 @@ BEGIN {
 /font_sz/ {
     font_sz = $2 + 0.0;
     if ( font_sz <= 0.0 ) {
-	printf "font size must be positive\n";
+	printf "font size must be positive\n" > "/dev/stderr";
 	exit 1;
     }
-}
-/x_label/ {
-    $1 = "";
-    x_label = $0;
 }
 /x_fmt/ {
     x_fmt = $2;
 }
-/y_label/ {
-    $1 = "";
-    y_label = $0;
-}
 /y_fmt/ {
     y_fmt = $2;
-}
-/caption/ {
-    $1 = "";
-    caption = $0;
 }
 
 # Print SVG that initializes document and plot area. Start plotting.
 /start_plot/ {
     if ( x0 == "nan" ) {
-	printf "x0 not set\n";
+	printf "x0 not set\n" > "/dev/stderr";
 	exit 1;
     }
     if ( dx == "nan" ) {
-	printf "dx not set\n";
+	printf "dx not set\n" > "/dev/stderr";
 	exit 1;
     }
     if ( dx == 0.0 ) {
-	printf "Plot width must be non-zero\n";
+	printf "Plot width must be non-zero\n" > "/dev/stderr";
 	exit 1;
     }
     if ( y0 == "nan" ) {
-	printf "y0 not set\n";
+	printf "y0 not set\n" > "/dev/stderr";
 	exit 1;
     }
     if ( dy == "nan" ) {
-	printf "dy not set\n";
+	printf "dy not set\n" > "/dev/stderr";
 	exit 1;
     }
     if ( dy == 0.0 ) {
-	printf "Plot height must be non-zero\n";
+	printf "Plot height must be non-zero\n" > "/dev/stderr";
 	exit 1;
     }
     if ( height == "nan" ) {
@@ -378,14 +360,6 @@ BEGIN {
 	printf "%s", labels[x];
 	printf "</text>\n";
     }
-    x_px = left + width / 2;
-    y_px = top + height + 5 * font_sz;
-    printf "<text\n";
-    printf "    x=\"%.1f\" y=\"%.1f\"\n", x_px, y_px;
-    printf "    font-size=\"%.0f\"\n", font_sz;
-    printf "    text-anchor=\"middle\">";
-    printf "%s", x_label;
-    printf "</text>\n";
 
 #   Draw and label y axis
     x_px = left - font_sz;
@@ -407,27 +381,6 @@ BEGIN {
 	    longest = len;
 	}
     }
-    x_px = left - longest * font_sz;
-    y_px = top + height / 2;
-    printf "<g transform=\"matrix(0.0, -1.0, 1.0, 0.0,"
-    printf " %.1f, %.1f)\">\n", x_px, y_px;
-    printf "    <text\n";
-    printf "        x=\"0.0\" y=\"0.0\"\n";
-    printf "        font-size=\"%.0f\"\n", font_sz;
-    printf "        text-anchor=\"middle\">";
-    printf "%s", y_label;
-    printf "</text>\n";
-    printf "</g>\n"
-
-#   Figure caption
-    x_px = left + width / 2;
-    y_px = top + height + 8.5 * font_sz;
-    printf "<text\n";
-    printf "    x=\"%.1f\" y=\"%.1f\"\n", x_px, y_px;
-    printf "    font-size=\"%.0f\"\n", font_sz;
-    printf "    text-anchor=\"middle\">";
-    printf "%s", caption;
-    printf "</text>\n";
 
     $0 = "";
 
