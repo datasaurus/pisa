@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: $ $Date: $
+# $Revision: 1.6 $ $Date: 2013/05/29 21:12:14 $
 #
 ################################################################################
 #
@@ -52,7 +52,7 @@
 #	dx plot_coord
 #	y0 plot_coord
 #	dy plot_coord
-#	plot_width pixels
+#	doc_width pixels
 #	top pixels
 #	right pixels
 #	bottom pixels
@@ -63,7 +63,7 @@
 #
 # Standard input may also include:
 #
-#	plot_height pixels
+#	doc_height pixels
 #
 # where:
 #	
@@ -71,15 +71,15 @@
 #	dx 		plot width in plot coordinates
 #	y0		y coordinate of bottom edge of plot in plot coordinates
 #	dy		plot height in plot coordinates
-#	plot_width	plot width in display units
-#	plot_height	(optional) plot height, in display units.
-#			If not given, height will be set to plot_width * dy / dx
+#	doc_width	document width in display units (pixels).
+#	doc_height	(optional) plot height, in display units (pixels).
+#			If not given, height will be set to doc_width * dy / dx
 #	top		size of the area above the plot, in display units
 #	right		size of the area right of the plot, in display units
 #	bottom		size of the area below the plot, in display units
 #	left		size of the area left of the plot, in display units
-#			Document width will be left + plot_width + right
-#			Document height will be top + plot_height + bottom
+#			Document width will be left + doc_width + right
+#			Document height will be top + doc_height + bottom
 #	font_sz		font size for labels, in display units
 #	x_fmt		format for x axis labels
 #	y_fmt		format for y axis labels
@@ -229,8 +229,8 @@ function copy_arr(dest, src)
 BEGIN {
     FS = "=";
     printing = 0;
-    plot_width = 800.0;
-    plot_height = "nan";
+    doc_width = 800.0;
+    doc_height = "nan";
     top = 0.0;
     right = 0.0;
     bottom = 0.0;
@@ -247,23 +247,23 @@ BEGIN {
 }
 
 # Set parameters from standard input
-/plot_width/ {
+/doc_width/ {
     if ( !have_plot_width ) {
-	plot_width = $2 + 0.0;
-	if ( plot_width <= 0.0 ) {
+	doc_width = $2 + 0.0;
+	if ( doc_width <= 0.0 ) {
 	    printf "%s: expected positive number for plot width,", app_nm > err
-	    printf " got %s\n", plot_width > err;
+	    printf " got %s\n", doc_width > err;
 	    exit 1;
 	}
 	have_plot_width = 1;
     }
 }
-/^ *plot_height *= *[0-9.Ee-]+ *$/ {
+/^ *doc_height *= *[0-9.Ee-]+ *$/ {
     if ( !have_plot_height ) {
-	plot_height = $2 + 0.0;
-	if ( plot_height <= 0.0 ) {
+	doc_height = $2 + 0.0;
+	if ( doc_height <= 0.0 ) {
 	    printf "%s: expected positive number for height,", app_nm > err;
-	    printf "got %s\n", plot_height > err;
+	    printf "got %s\n", doc_height > err;
 	    exit 1;
 	}
 	have_plot_height = 1;
@@ -391,8 +391,12 @@ BEGIN {
 	print "%s: dy not set\n", app_nm > err;
 	exit 1;
     }
-    if ( plot_height == "nan" ) {
+    plot_width = doc_width - left - right;
+    if ( doc_height == "nan" ) {
 	plot_height = plot_width * dy / dx;
+	doc_height = plot_height + top + bottom;
+    } else {
+	plot_height = doc_height - top - bottom;
     }
 
     printf "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
@@ -400,8 +404,7 @@ BEGIN {
     printf "    \"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\"";
     printf ">\n";
     printf "<svg \n";
-    printf "    width=\"%.1f\" height=\"%.1f\"\n",
-	   left + plot_width + right, top + plot_height + bottom;
+    printf "    width=\"%.1f\" height=\"%.1f\"\n", doc_width, doc_height;
     printf "    xmlns=\"http://www.w3.org/2000/svg\"\n";
     printf "    xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
     printf ""
