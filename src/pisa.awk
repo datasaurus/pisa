@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.6 $ $Date: 2013/05/29 21:12:14 $
+# $Revision: 1.7 $ $Date: 2013/05/29 21:47:37 $
 #
 ################################################################################
 #
@@ -408,6 +408,9 @@ BEGIN {
     printf "    xmlns=\"http://www.w3.org/2000/svg\"\n";
     printf "    xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
     printf ""
+    printf "<rect x=\"0.0\" y=\"0.0\""
+    printf "    width=\"%.1f\" height=\"%.1f\"", doc_width, doc_height;
+    printf "    fill=\"white\" />\n"
 
     printf "<svg \n";
     printf "    x=\"%.1f\" y=\"%.1f\"\n", left, top;
