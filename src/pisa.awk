@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.7 $ $Date: 2013/05/29 21:47:37 $
+# $Revision: 1.8 $ $Date: 2013/06/27 21:57:02 $
 #
 ################################################################################
 #
@@ -421,7 +421,7 @@ BEGIN {
     printf "<clipPath id=\"PlotArea\">\n";
     printf "    <rect x=\"%.1f\" y=\"%.1f\"\n", x0, y0;
     printf "            width=\"%.1f\" height=\"%.1f\" />\n", dx, dy;
-    printf "</clipPath>"
+    printf "</clipPath>\n"
     printf "<g transform=\"matrix(1 0 0 -1 %.1f %.1f)\"", -x0, y0 + dy;
     printf " clip-path=\"url(#PlotArea)\">"
 
