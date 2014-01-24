@@ -31,22 +31,11 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.9 $ $Date: 2013/10/04 16:06:36 $
+# $Revision: 1.10 $ $Date: 2014/01/24 22:41:20 $
 #
 ################################################################################
 #
-# SVG code concatatenated to output from this script will be
-# rendered in a cartesian coordinate system with origin at x0, y0
-# at the lower left, x increasing right, y increasing upward.
-#
-# SVG code for the plot area MUST be terminated with "</g></svg>"
-#
-# Subsequent svg code will be rendered in the initial coordinate
-# system of the document.
-#
-# The document MUST be terminated with "</svg>"
-#
-# Standard input must include, in any order:
+# Standard input must include:
 #
 #	x0 plot_coord
 #	x_width plot_coord
@@ -60,6 +49,7 @@
 #	font_sz size
 #	start_plot
 #	end_plot
+#	end
 #
 # Standard input may also include:
 #
@@ -92,6 +82,8 @@
 #			SVG elements.
 #	end		indicates no more input. The process prints
 #			SVG code to finish the document, and exits.
+#
+################################################################################
 
 # axis_lbl --
 #	This function determines axis label locations.
@@ -248,148 +240,109 @@ BEGIN {
 }
 
 # Set parameters from standard input
-/doc_width/ {
-    if ( !have_plot_width ) {
-	doc_width = $2 + 0.0;
-	if ( doc_width <= 0.0 ) {
-	    printf "%s: expected positive number for plot width,", app_nm > err
-	    printf " got %s\n", doc_width > err;
-	    exit 1;
-	}
-	have_plot_width = 1;
+/^ *doc_width *= *[0-9.Ee-]+ *$/ {
+    doc_width = $2 + 0.0;
+    if ( doc_width <= 0.0 ) {
+	printf "%s: expected positive number for plot width,", app_nm > err;
+	printf " got %s\n", $2 > err;
+	exit 1;
     }
 }
 /^ *doc_height *= *[0-9.Ee-]+ *$/ {
-    if ( !have_plot_height ) {
-	doc_height = $2 + 0.0;
-	if ( doc_height <= 0.0 ) {
-	    printf "%s: expected positive number for height,", app_nm > err;
-	    printf "got %s\n", doc_height > err;
-	    exit 1;
-	}
-	have_plot_height = 1;
+    doc_height = $2 + 0.0;
+    if ( doc_height <= 0.0 ) {
+	printf "%s: expected positive number for height,", app_nm > err;
+	printf "got %s\n", $2 > err;
+	exit 1;
     }
 }
-/top/ {
-    if ( !have_top ) {
-	top = $2 + 0.0;
-	if ( top < 0.0 ) {
-	    printf "%s: expected non-negative number" app_nm > err;
-	    printf " for top margin, got %s\n", top > err;
-	    exit 1;
-	}
-	have_top = 1;
+/^ *top *= *[0-9.Ee-]+ *$/ {
+    top = $2 + 0.0;
+    if ( top < 0.0 ) {
+	printf "%s: expected non-negative number" app_nm > err;
+	printf " for top margin, got %s\n", $2 > err;
+	exit 1;
     }
 }
-/right/ {
-    if ( !have_right ) {
-	right = $2 + 0.0;
-	if ( right < 0.0 ) {
-	    printf "%s: expected non-negative number" app_nm > err;
-	    printf " for right margin, got %s\n", right > err;
-	    exit 1;
-	}
-	have_right = 1;
+/^ *right *= *[0-9.Ee-]+ *$/ {
+    right = $2 + 0.0;
+    if ( right < 0.0 ) {
+	printf "%s: expected non-negative number" app_nm > err;
+	printf " for right margin, got %s\n", $2 > err;
+	exit 1;
     }
 }
-/bottom/ {
-    if ( !have_bottom ) {
-	bottom = $2 + 0.0;
-	if ( bottom < 0.0 ) {
-	    printf "%s: expected non-negative number" app_nm > err;
-	    printf " for bottom margin, got %s\n", bottom > err;
-	    exit 1;
-	}
-	have_bottom = 1;
+/^ *bottom *= *[0-9.Ee-]+ *$/ {
+    bottom = $2 + 0.0;
+    if ( bottom < 0.0 ) {
+	printf "%s: expected non-negative number" app_nm > err;
+	printf " for bottom margin, got %s\n", $2 > err;
+	exit 1;
     }
 }
-/left/ {
-    if ( !have_left ) {
-	left = $2 + 0.0;
-	if ( left < 0.0 ) {
-	    printf "%s: expected non-negative number" app_nm > err;
-	    printf " for left margin, got %s\n", left > err
-	    exit 1;
-	}
-	have_left = 1;
+/^ *left *= *[0-9.Ee-]+ *$/ {
+    left = $2 + 0.0;
+    if ( left < 0.0 ) {
+	printf "%s: expected non-negative number" app_nm > err;
+	printf " for left margin, got %s\n", $2 > err;
+	exit 1;
     }
 }
-/x0/ {
-    if ( !have_x0 ) {
-	x0 = $2 + 0.0;
-	have_x0 = 1;
+/^ *x0 *= *[0-9.Ee-]+ *$/ {
+    x0 = $2 + 0.0;
+}
+/^ *x_width *= *[0-9.Ee-]+ *$/ {
+    x_width = $2 + 0.0;
+    if ( x_width == 0.0 ) {
+	printf "%s: expected non-negative number", app_nm > err;
+	printf " for x_width (plot width in plot coordinates)," > err;
+	printf " got %s\n", $2 > err;
+	exit 1;
     }
 }
-/x_width/ {
-    if ( !have_dx ) {
-	x_width = $2 + 0.0;
-	if ( x_width == 0.0 ) {
-	    printf "%s: expected non-negative number", app_nm > err;
-	    printf " for x_width (plot width in plot coordinates)," > err;
-	    printf " got %s\n", x_width > err;
-	    exit 1;
-	}
-	have_dx = 1;
+/^ *y0 *= *[0-9.Ee-]+ *$/ {
+    y0 = $2 + 0.0;
+}
+/^ *y_height *= *[0-9.Ee-]+ *$/ {
+    y_height = $2 + 0.0;
+    if ( y_height == 0.0 ) {
+	printf "%s: expected non-negative number", app_nm > err;
+	printf " for y_height (plot height in plot coordinates)," err;
+	printf " got %s\n", $2 > err;
+	exit 1;
     }
 }
-/y0/ {
-    if ( !have_y0 ) {
-	y0 = $2 + 0.0;
-	have_y0 = 1;
+/^ *font_sz *= *[0-9.Ee-]+ *$/ {
+    font_sz = $2 + 0.0;
+    if ( font_sz < 0.0 ) {
+	printf "%s: expected non-negative number" app_nm > err;
+	printf " for font_sz margin, got %s\n", $2 > err;
+	exit 1;
     }
 }
-/y_height/ {
-    if ( !have_dy ) {
-	y_height = $2 + 0.0;
-	if ( y_height == 0.0 ) {
-	    printf "%s: expected non-negative number", app_nm > err;
-	    printf " for y_height (plot height in plot coordinates)," err;
-	    printf " got %s\n", y_height > err;
-	    exit 1;
-	}
-	have_dy = 1;
-    }
+/^ *x_fmt *= *[0-9.Ee-]+ *$/ {
+    x_fmt = $2;
 }
-/font_sz/ {
-    if ( !have_font_sz ) {
-	font_sz = $2 + 0.0;
-	if ( font_sz < 0.0 ) {
-	    printf "%s: expected non-negative number" app_nm > err;
-	    printf " for font_sz margin, got %s\n", font_sz > err;
-	    exit 1;
-	}
-	have_font_sz = 1;
-    }
-}
-/x_fmt/ {
-    if ( !have_x_fmt ) {
-	x_fmt = $2;
-	have_x_fmt = 1;
-    }
-}
-/y_fmt/ {
-    if ( !have_y_fmt ) {
-	y_fmt = $2;
-	have_y_fmt = 1;
-    }
+/^ *y_fmt *= *[0-9.Ee-]+ *$/ {
+    y_fmt = $2;
 }
 
 # Print SVG that initializes document and plot area. Start plotting.
 /start_plot/ {
     if ( x0 == "nan" ) {
-	print "%s: x0 not set\n", app_nm > err;
+	printf "%s: x0 not set\n", app_nm > err;
 	exit 1;
     }
     if ( x_width == "nan" ) {
-	print "%s: x_width not set\n", app_nm > err;
+	printf "%s: x_width not set\n", app_nm > err;
 	exit 1;
     }
     if ( y0 == "nan" ) {
-	print "%s: y0 not set\n", app_nm > err;
+	printf "%s: y0 not set\n", app_nm > err;
 	exit 1;
     }
     if ( y_height == "nan" ) {
-	print "%s: y_height not set\n", app_nm > err;
+	printf "%s: y_height not set\n", app_nm > err;
 	exit 1;
     }
     plot_width = doc_width - left - right;
