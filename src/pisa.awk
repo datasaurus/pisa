@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.10 $ $Date: 2014/01/24 22:41:20 $
+# $Revision: 1.11 $ $Date: 2014/01/24 23:31:04 $
 #
 ################################################################################
 #
@@ -361,10 +361,15 @@ BEGIN {
     printf "    width=\"%f\" height=\"%f\"\n", doc_width, doc_height;
     printf "    xmlns=\"http://www.w3.org/2000/svg\"\n";
     printf "    xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
-    printf ""
     printf "<rect x=\"0.0\" y=\"0.0\""
     printf "    width=\"%f\" height=\"%f\"", doc_width, doc_height;
     printf "    fill=\"white\" />\n"
+    printf "<clipPath id=\"PlotArea\">\n";
+    printf "    <rect x=\"%f\" y=\"%f\"\n", left, top;
+    printf "            width=\"%f\" height=\"%f\"", plot_width, plot_height;
+    printf " />\n"
+    printf "</clipPath>\n"
+    printf "<g clip-path=\"url(#PlotArea)\">\n"
 
     printf "<svg \n";
     printf "    x=\"%f\" y=\"%f\"\n", left, top;
@@ -372,12 +377,7 @@ BEGIN {
     printf "    viewBox=\"0.0 0.0 %f %f\"\n", x_width, y_height;
     printf "    preserveAspectRatio=\"none\"\n>\n";
 
-    printf "<clipPath id=\"PlotArea\">\n";
-    printf "    <rect x=\"%f\" y=\"%f\"\n", x0, y0;
-    printf "            width=\"%f\" height=\"%f\" />\n", x_width, y_height;
-    printf "</clipPath>\n"
-    printf "<g transform=\"matrix(1 0 0 -1 %f %f)\"", -x0, y0 + y_height;
-    printf " clip-path=\"url(#PlotArea)\">"
+    printf "<g transform=\"matrix(1 0 0 -1 %f %f)\">\n", -x0, y0 + y_height;
 
     $0 = "";
     printing = 1;
@@ -387,6 +387,7 @@ BEGIN {
 /end_plot/ {
     printf "</g>\n";
     printf "</svg>\n";
+    printf "</g>\n";
     printf "<rect x=\"%f\" y=\"%f\"\n", left, top
     printf "    width=\"%f\" height=\"%f\"\n", plot_width, plot_height
     printf "    fill=\"none\" stroke=\"black\" />\n"
