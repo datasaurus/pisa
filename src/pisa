@@ -3,7 +3,7 @@
 # This script creates an svg element that uses cartesian coordinates.
 #
 # Usage:
-#	cart_svg [-d] [-x pixels] [-y pixels] [-w pixels] [--]
+#	xyplot [-d] [-x pixels] [-y pixels] [-w pixels] [--]
 #		x0 y0 width height command [args]
 # where:
 #	-d	requests svg document. Otherwise, output will be svg
