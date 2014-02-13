@@ -31,16 +31,16 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.11 $ $Date: 2014/01/24 23:31:04 $
+# $Revision: 1.12 $ $Date: 2014/02/03 23:05:53 $
 #
 ################################################################################
 #
 # Standard input must include:
 #
 #	x0 plot_coord
-#	x_width plot_coord
+#	x1 plot_coord
 #	y0 plot_coord
-#	y_height plot_coord
+#	y1 plot_coord
 #	doc_width pixels
 #	top pixels
 #	right pixels
@@ -58,13 +58,11 @@
 # where:
 #	
 #	x0		x coordinate of left edge of plot in plot coordinates
-#	x_width		plot width in plot coordinates
+#	x1		x coordinate of right edge of plot in plot coordinates
 #	y0		y coordinate of bottom edge of plot in plot coordinates
-#	y_height	plot height in plot coordinates
+#	y1		y coordinate of top edge of plot in plot coordinates
 #	doc_width	document width in display units (pixels).
 #	doc_height	(optional) plot height, in display units (pixels).
-#			If not given, height will be set to
-#			doc_width * y_height / x_width
 #	top		size of the area above the plot, in display units
 #	right		size of the area right of the plot, in display units
 #	bottom		size of the area below the plot, in display units
@@ -105,10 +103,10 @@
 function axis_lbl(x_min, x_max, fmt, n_max, labels,
 	l0, l1, dx, t)
 {
-    # Put a tentative number of labels into l0.
-    # Put more labels into l1. If l1 would need more than n_max
-    # characters, return l0. Otherwise, copy l1 to l0 and try
-    # a more populated l1.
+#   Put a tentative number of labels into l0.
+#   Put more labels into l1. If l1 would need more than n_max
+#   characters, return l0. Otherwise, copy l1 to l0 and try
+#   a more populated l1.
     if ( x_min > x_max ) {
 	t = x_max;
 	x_max = x_min;
@@ -229,9 +227,9 @@ BEGIN {
     bottom = 0.0;
     left = 0.0;
     x0 = "nan";
-    x_width = "nan";
+    x1 = "nan";
     y0 = "nan";
-    y_height = "nan";
+    y1 = "nan";
     x_fmt = "%g";
     y_fmt = "%g";
     font_size = 12.0;
@@ -240,6 +238,9 @@ BEGIN {
 }
 
 # Set parameters from standard input
+/title/ {
+    title = $2;
+}
 /^ *doc_width *= *[0-9.Ee-]+ *$/ {
     doc_width = $2 + 0.0;
     if ( doc_width <= 0.0 ) {
@@ -291,26 +292,14 @@ BEGIN {
 /^ *x0 *= *[0-9.Ee-]+ *$/ {
     x0 = $2 + 0.0;
 }
-/^ *x_width *= *[0-9.Ee-]+ *$/ {
-    x_width = $2 + 0.0;
-    if ( x_width == 0.0 ) {
-	printf "%s: expected non-negative number", app_nm > err;
-	printf " for x_width (plot width in plot coordinates)," > err;
-	printf " got %s\n", $2 > err;
-	exit 1;
-    }
+/^ *x1 *= *[0-9.Ee-]+ *$/ {
+    x1 = $2 + 0.0;
 }
 /^ *y0 *= *[0-9.Ee-]+ *$/ {
     y0 = $2 + 0.0;
 }
-/^ *y_height *= *[0-9.Ee-]+ *$/ {
-    y_height = $2 + 0.0;
-    if ( y_height == 0.0 ) {
-	printf "%s: expected non-negative number", app_nm > err;
-	printf " for y_height (plot height in plot coordinates)," err;
-	printf " got %s\n", $2 > err;
-	exit 1;
-    }
+/^ *y1 *= *[0-9.Ee-]+ *$/ {
+    y1 = $2 + 0.0;
 }
 /^ *font_sz *= *[0-9.Ee-]+ *$/ {
     font_sz = $2 + 0.0;
@@ -327,22 +316,32 @@ BEGIN {
     y_fmt = $2;
 }
 
-# Print SVG that initializes document and plot area. Start plotting.
+# Validate parameters and start plotting.
 /start_plot/ {
     if ( x0 == "nan" ) {
 	printf "%s: x0 not set\n", app_nm > err;
 	exit 1;
     }
-    if ( x_width == "nan" ) {
-	printf "%s: x_width not set\n", app_nm > err;
+    if ( x1 == "nan" ) {
+	printf "%s: x1 not set\n", app_nm > err;
+	exit 1;
+    }
+    x_width = x1 - x0;
+    if ( x_width <= 0 ) {
+	printf "%s: plot width must be positive\n", app_nm > err;
 	exit 1;
     }
     if ( y0 == "nan" ) {
 	printf "%s: y0 not set\n", app_nm > err;
 	exit 1;
     }
-    if ( y_height == "nan" ) {
-	printf "%s: y_height not set\n", app_nm > err;
+    if ( y1 == "nan" ) {
+	printf "%s: y1 not set\n", app_nm > err;
+	exit 1;
+    }
+    y_height = y1 - y0;
+    if ( y_height <= 0 ) {
+	printf "%s: plot height must be positive\n", app_nm > err;
 	exit 1;
     }
     plot_width = doc_width - left - right;
@@ -353,59 +352,153 @@ BEGIN {
 	plot_height = doc_height - top - bottom;
     }
 
+#   Initialize the SVG document
     printf "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     printf "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\"\n";
-    printf "    \"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\"";
-    printf ">\n";
-    printf "<svg \n";
-    printf "    width=\"%f\" height=\"%f\"\n", doc_width, doc_height;
+    printf "    \"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n";
+    printf "<svg\n";
+    printf "    width=\"%f\"\n", doc_width;
+    printf "    height=\"%f\"\n", doc_height;
     printf "    xmlns=\"http://www.w3.org/2000/svg\"\n";
     printf "    xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
-    printf "<rect x=\"0.0\" y=\"0.0\""
-    printf "    width=\"%f\" height=\"%f\"", doc_width, doc_height;
-    printf "    fill=\"white\" />\n"
-    printf "<clipPath id=\"PlotArea\">\n";
-    printf "    <rect x=\"%f\" y=\"%f\"\n", left, top;
-    printf "            width=\"%f\" height=\"%f\"", plot_width, plot_height;
-    printf " />\n"
-    printf "</clipPath>\n"
-    printf "<g clip-path=\"url(#PlotArea)\">\n"
+    if ( length(title) > 0 ) {
+	printf "  <title>%s</title>\n", title;
+    }
+    printf "\n";
 
-    printf "<svg \n";
-    printf "    x=\"%f\" y=\"%f\"\n", left, top;
-    printf "    width=\"%f\" height=\"%f\"\n", plot_width, plot_height;
-    printf "    viewBox=\"0.0 0.0 %f %f\"\n", x_width, y_height;
-    printf "    preserveAspectRatio=\"none\"\n>\n";
+    printf "<script\n";
+    printf "    type=\"application/ecmascript\"\n";
+    printf "    xlink:href=\"xyplot.js\" />\n";
 
-    printf "<g transform=\"matrix(1 0 0 -1 %f %f)\">\n", -x0, y0 + y_height;
+#   Define plot area rectangle
+    printf "<defs>\n";
+    printf "  <!-- Plot area rectangle -->\n";
+    printf "  <rect\n";
+    printf "      id=\"PlotRect\"\n";
+    printf "      width=\"%f\"\n", plot_width;
+    printf "      height=\"%f\" />\n", plot_height;
+    printf "</defs>\n";
 
+#   Define plot area clip path
+    printf "<defs>\n";
+    printf "  <!-- Clip path for plot area -->\n";
+    printf "  <clipPath id=\"PlotArea\">\n";
+    printf "    <use\n";
+    printf "        xlink:href=\"#PlotRect\"\n";
+    printf "        x=\"%f\"\n", left;
+    printf "        y=\"%f\" />\n", top;
+    printf "  </clipPath>\n";
+
+#   X axis geometry and clip path.
+    x_axis_left = left - 4.0 * font_sz;
+    x_axis_top = top + plot_height;
+    x_axis_width = plot_width + 8.0 * font_sz;
+    x_axis_height = 3 * font_sz;
+    printf "  <!-- Clip path for x axis labels -->\n";
+    printf "  <clipPath id=\"xAxisClip\">\n";
+    printf "    <rect\n";
+    printf "        x=\"%f\"\n", x_axis_left;
+    printf "        y=\"%f\"\n", x_axis_top;
+    printf "        width=\"%f\"\n", x_axis_width;
+    printf "        height=\"%f\"/>\n", x_axis_height;
+    printf "  </clipPath>\n";
+
+#   Y axis geometry and clip path.
+    y_axis_left = left - 9.0 * font_sz;
+    y_axis_top = top - font_sz;
+    y_axis_width = 9.0 * font_sz;
+    y_axis_height = plot_height + 3.0 * font_sz;
+    printf "  <!-- Clip path for y axis labels -->\n";
+    printf "  <clipPath id=\"yAxisClip\">\n";
+    printf "    <rect\n";
+    printf "        x=\"%f\"\n", y_axis_left;
+    printf "        y=\"%f\"\n", y_axis_top;
+    printf "        width=\"%f\"\n", y_axis_width;
+    printf "        height=\"%f\" />\n", y_axis_height;
+    printf "  </clipPath>\n";
+    printf "</defs>\n";
+
+#   Create plot area.
+    printf "<!-- Clip path and SVG element for plot area -->\n";
+    printf "<g clip-path=\"url(#PlotArea)\">\n";
+    printf "  <svg\n";
+    printf "      id=\"plot\"\n";
+    printf "      x=\"%f\"\n", left;
+    printf "      y=\"%f\"\n", top;
+    printf "      width=\"%f\"\n", plot_width;
+    printf "      height=\"%f\"\n", plot_height;
+    printf "      viewBox=\"0.0 0.0 %f %f\"\n", x_width, y_height;
+    printf "      preserveAspectRatio=\"none\"\n";
+    printf "      onmousedown=\"start_plot_drag(evt)\"\n";
+    printf "      onmousemove=\"cursor_loc(evt)\">\n";
+    printf "\n";
+    printf "    <!-- Fill in plot area background -->\n";
+    printf "    <use\n";
+    printf "        xlink:href=\"#PlotRect\"\n";
+    printf "        x=\"0.0\"\n";
+    printf "        y=\"0.0\"\n";
+    printf "        fill=\"white\">\n";
+    printf "    </use>\n";
+    printf "\n"
+    printf "    <!-- Flip y coordinates to make them Cartesian -->\n";
+    printf "    <g transform=\"matrix(1.0 0.0 0.0 -1 %f %f)\">\n",
+	   -x0, y0 + y_height;
+    printf "\n";
+    printf "<!-- Define elements in plot area -->\n";
     $0 = "";
     printing = 1;
 }
 
-# Done plotting. Terminate plot area. Draw axes and labels.
+# When done plotting. Terminate plot area. Draw axes and labels.
 /end_plot/ {
+    printf "\n";
+    printf "<!-- Done defining elements in plot area -->\n"
+    printf "\n";
+    printf "      </g>\n";
+    printf "\n"
+    printf "  <!-- Terminate SVG element for plot area -->\n"
+    printf "  </svg>\n";
+    printf "<!-- Terminate clipping for plot area -->\n"
     printf "</g>\n";
-    printf "</svg>\n";
-    printf "</g>\n";
-    printf "<rect x=\"%f\" y=\"%f\"\n", left, top
-    printf "    width=\"%f\" height=\"%f\"\n", plot_width, plot_height
-    printf "    fill=\"none\" stroke=\"black\" />\n"
+    printf "\n";
+    printf "<!-- Draw boundary around plot area -->\n";
+    printf "<use\n";
+    printf "    xlink:href=\"#PlotRect\"\n";
+    printf "    x=\"%f\"\n", left;
+    printf "    y=\"%f\"\n", top;
+    printf "    fill=\"none\"\n";
+    printf "    stroke=\"black\">\n";
+    printf "</use>\n";
+    printf "\n";
 
 #   Draw and label x axis
     y_px = top + plot_height + font_sz;
     px_per_m = plot_width / x_width;
     axis_lbl(x0, x0 + x_width, x_fmt, plot_width / font_sz + 1, labels);
+    printf "<!-- Clip area and svg element for x axis and labels -->\n";
+    printf "<g clip-path=\"url(#xAxisClip)\">\n";
+    printf "  <svg\n";
+    printf "      id=\"xAxis\"\n";
+    printf "      x=\"%f\"\n", x_axis_left;
+    printf "      y=\"%f\"\n", x_axis_top;
+    printf "      width=\"%f\"\n", x_axis_width;
+    printf "      height=\"%f\"\n", x_axis_height;
+    printf "      viewBox=\"%f %f %f %f\">\n",
+	   x_axis_left, x_axis_top, x_axis_width, x_axis_height;
     for (x in labels) {
 	x_px = left + (x - x0) * px_per_m;
-	printf "<text\n";
-	printf "    x=\"%f\" y=\"%f\"\n", x_px, y_px;
-	printf "    font-size=\"%.0f\"\n", font_sz;
-	printf "    text-anchor=\"middle\"\n";
-	printf "    dominant-baseline=\"hanging\">";
-	printf "%s", labels[x];
-	printf "</text>\n";
+	printf "  <text\n";
+	printf "      x=\"%f\"\n", x_px;
+	printf "      y=\"%f\"\n", y_px;
+	printf "      font-size=\"%.1f\"\n", font_sz;
+	printf "      text-anchor=\"middle\"\n";
+	printf "      dominant-baseline=\"hanging\">\n";
+	printf "    %s\n", labels[x];
+	printf "  </text>\n";
     }
+    printf "  </svg>\n";
+    printf "</g>\n";
+    printf "\n";
 
 #   Draw and label y axis
     x_px = left - font_sz;
@@ -413,20 +506,34 @@ BEGIN {
     y1 = y0 + y_height;
     longest = 6;
     axis_lbl(y0, y1, y_fmt, plot_height / font_sz + 1, labels);
+    printf "<!-- Clip area and svg element for y axis and labels -->\n";
+    printf "<g\n";
+    printf "    clip-path=\"url(#yAxisClip)\">\n";
+    printf "  <svg\n";
+    printf "	id=\"yAxis\"\n";
+    printf "    x=\"%f\"\n", y_axis_left;
+    printf "    y=\"%f\"\n", y_axis_top;
+    printf "    width=\"%f\"\n", y_axis_width;
+    printf "    height=\"%f\"\n", y_axis_height;
+    printf "	viewBox=\"%f %f %f %f\">\n",
+	   y_axis_left, y_axis_top, y_axis_width, y_axis_height;
     for (y in labels) {
 	y_px = top + (y1 - y) * px_per_m;
-	printf "<text\n";
-	printf "    x=\"%f\" y=\"%f\"\n", x_px, y_px;
-	printf "    font-size=\"%.0f\"\n", font_sz;
-	printf "    text-anchor=\"end\"\n";
-	printf "    dominant-baseline=\"mathematical\">";
+	printf "  <text\n";
+	printf "      x=\"%f\" y=\"%f\"\n", x_px, y_px;
+	printf "      font-size=\"%.0f\"\n", font_sz;
+	printf "      text-anchor=\"end\"\n";
+	printf "      dominant-baseline=\"mathematical\">";
 	printf "%s", labels[y];
-	printf "</text>\n";
+	printf "  </text>\n";
 	len = length(labels[y]);
 	if ( len > longest ) {
 	    longest = len;
 	}
     }
+    printf "  </svg>\n";
+    printf "</g>\n";
+    printf "\n";
 
     $0 = "";
 
@@ -444,5 +551,8 @@ BEGIN {
 }
 
 END {
+    printf "<!-- Information bar -->\n";
+    printf "<text id=\"cursor_loc\" x=\"%f\" y=\"%f\">x y</text>\n",
+	   2.0 * font_sz, 2.0 * font_sz;
     printf "</svg>\n";
 }
