@@ -6,8 +6,11 @@ function start_plot_drag(evt)
     var plot = document.getElementById("plot");
     plot.x_axis = document.getElementById("xAxis");
     plot.y_axis = document.getElementById("yAxis");
-    plot.prev_evt_x = evt.clientX;
-    plot.prev_evt_y = evt.clientY;
+    plot.background = document.getElementById("plotBackground");
+    plot.x0 = Number(plot.getAttribute("x"));
+    plot.y0 = Number(plot.getAttribute("y"));
+    plot.prev_evt_x = plot.drag_x0 = evt.clientX;
+    plot.prev_evt_y = plot.drag_y0 = evt.clientY;
     plot.drag = plot_drag;
     plot.end_drag = end_plot_drag;
     plot.addEventListener("mousemove", plot.drag, false);
@@ -29,6 +32,17 @@ function plot_drag(evt) {
 function end_plot_drag(evt)
 {
     var plot = this;
+    get_geom(plot);
+    var dx = (evt.clientX - plot.drag_x0) * plot.cart_width / plot.svg_width;
+    var dy = (evt.clientY - plot.drag_y0) * plot.cart_height / plot.svg_height;
+    var x = plot.cart_x0 - dx;
+    var y = plot.cart_y1 - dy;
+    var viewBox = x + " " + y + " " + plot.cart_width + " " + plot.cart_height;
+    plot.setAttribute("viewBox", viewBox);
+    plot.setAttribute("x", plot.x0);
+    plot.setAttribute("y", plot.y0);
+    plot.background.setAttribute("x", x);
+    plot.background.setAttribute("y", y);
     plot.removeEventListener("mousemove", plot.drag, false);
     plot.removeEventListener("mouseup", plot.end_drag, false);
 }
