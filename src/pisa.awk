@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.12 $ $Date: 2014/02/03 23:05:53 $
+# $Revision: 1.13 $ $Date: 2014/02/13 21:09:22 $
 #
 ################################################################################
 #
@@ -427,22 +427,22 @@ BEGIN {
     printf "      y=\"%f\"\n", top;
     printf "      width=\"%f\"\n", plot_width;
     printf "      height=\"%f\"\n", plot_height;
-    printf "      viewBox=\"0.0 0.0 %f %f\"\n", x_width, y_height;
+    printf "      viewBox=\"%f %f %f %f\"\n", x0, y1, x_width, y_height;
     printf "      preserveAspectRatio=\"none\"\n";
     printf "      onmousedown=\"start_plot_drag(evt)\"\n";
     printf "      onmousemove=\"cursor_loc(evt)\">\n";
     printf "\n";
     printf "    <!-- Fill in plot area background -->\n";
-    printf "    <use\n";
-    printf "        xlink:href=\"#PlotRect\"\n";
-    printf "        x=\"0.0\"\n";
-    printf "        y=\"0.0\"\n";
-    printf "        fill=\"white\">\n";
-    printf "    </use>\n";
+    printf "    <rect\n";
+    printf "        id=\"plotBackground\"\n";
+    printf "        x=\"%f\"\n", x0;
+    printf "        y=\"%f\"\n", y1;
+    printf "        width=\"%f\"\n", x_width;
+    printf "        height=\"%f\"\n", y_height;
+    printf "        fill=\"white\" />\n";
     printf "\n"
     printf "    <!-- Flip y coordinates to make them Cartesian -->\n";
-    printf "    <g transform=\"matrix(1.0 0.0 0.0 -1 %f %f)\">\n",
-	   -x0, y0 + y_height;
+    printf "    <g transform=\"matrix(1.0 0.0 0.0 -1.0 0.0 %f)\">\n", y_height;
     printf "\n";
     printf "<!-- Define elements in plot area -->\n";
     $0 = "";
