@@ -1,31 +1,34 @@
 #!/bin/sh
 #
-# This script creates an svg element that uses cartesian coordinates.
+# This script creates an SVG document with a Cartesian plot, axes, labels,
+# and optional elements.
 #
 # Usage:
-#	xyplot [-d] [-x pixels] [-y pixels] [-w pixels] [--]
-#		x0 y0 width height command [args]
+#	xyplot [-d title] [-l pixels] [-r pixels] [-t pixels] [-b pixels]
+#		[-w pixels] [-h pixels] [-f pixels] [-X format] [-Y format]
+#		x0 x1 y0 y1 plot_code doc_code
 # where:
-#	-d	requests svg document. Otherwise, output will be svg
-#		element.
-#	-x	specifies the x attribute of the svg element. Ignored
-#		if -d option is present.
-#	-y	specifies the y attribute of the svg element. Ignored
-#		if -d option is present.
-#	-w	specifies the width of the svg element, in display units.
-#	x0	x coordinate of the LOWER LEFT corner of the plot, in plot
-#		units.
-#	y0	y coordinate of the LOWER LEFT corner of the plot, in plot
-#		units.
-#	width	width of the plot, in plot units (usually different from
-#		display units).
-#	height	height of the plot, in plot units (usually different from
-#		display units).
-#
-# This script prints svg code that defines the requested svg element.
-# Then it runs "command [args]", which should print svg code for the content
-# of the plot area to standard output.
-# When command exits, this script prints svg code to complete the svg element.
+#	-d		title of document svg element
+#	-l		left margin, pixels.
+#	-r		right margin, pixels.
+#	-t		top margin, pixels.
+#	-b		bottom margin, pixels.
+#	-w		document width, pixels.
+#	-h		document height, pixels.
+#	-f		font size, pixels.
+#	-X		format for x axis labels. See printf (1).
+#	-Y		format for y axis labels. See printf (1).
+#	x0		x coordinate of left side of plot, plot units.
+#	x1		x coordinate of right side of plot, plot units.
+#			x1 > x0.
+#	y0		y coordinate of bottom of plot, plot units.
+#	y1		y coordinate of top of plot, plot units.
+#			y1 > y0.
+#	plot_code	SVG code for elements in plot area, using plot
+#			coordinates.
+#	doc_code	SVG code for elements in document, such as axis labels,
+#			legends, and captions, using document coordinates
+#			(pixels). Drawn last.
 #
 ########################################################################
 #
@@ -53,6 +56,11 @@
 #
 ########################################################################
 
+if test $DEBUG
+then
+    set -x
+fi
+
 # Check for numerical value
 check_num() {
     name="$1"
@@ -68,75 +76,107 @@ check_num() {
 # Otherwise, variable specifies plot coordinates.
 
 # Set some defaults
-x_dpy="0"
-y_dpy="0"
-w_dpy="800.0"
-document=
+font_sz="9.0"	
+left="`echo $font_sz \* 12 | bc -l`"
+right="`echo $font_sz \* 6 | bc -l`"
+top="`echo $font_sz \* 3 | bc -l`"
+bottom="`echo $font_sz \* 6 | bc -l`"
+doc_width="800"
+doc_height=
+x_fmt="%.3g"
+y_fmt="%.3g"
 
 # Parse command line
-while getopts :dxyw: opt
+while getopts :d:l:r:t:b:w:h:f:X:Y: opt
 do
     case $opt
     in
 	d)
-	    document="1"
+	    title="$OPTARG"
 	    ;;
-	x)
-	    x_dpy=$OPTARG
-	    check_num "display x coordinate" $x_dpy
+	l)
+	    left=$OPTARG
+	    check_num "left margin" $left
 	    ;;
-	y)
-	    y_dpy=$OPTARG
-	    check_num "display y coordinate" $y_dpy
+	r)
+	    right=$OPTARG
+	    check_num "right margin" $right
+	    ;;
+	t)
+	    top=$OPTARG
+	    check_num "top margin" $top
+	    ;;
+	b)
+	    bottom=$OPTARG
+	    check_num "bottom margin" $bottom
 	    ;;
 	w)
-	    w_dpy=$OPTARG
-	    check_num "display width" $w_dpy
+	    doc_width=$OPTARG
+	    check_num "document width" $doc_width
+	    ;;
+	h)
+	    doc_height=$OPTARG
+	    check_num "document height" $doc_height
+	    ;;
+	f)
+	    font_sz=$OPTARG
+	    check_num "font size" $font_sz
+	    ;;
+	X)
+	    x_fmt="$OPTARG"
+	    ;;
+	Y)
+	    y_fmt="$OPTARG"
 	    ;;
 	\?)
 	    echo "$0: unknown option $OPTARG" 1>&2
+	    exit 1
 	    ;;
     esac
 done
 shift `expr $OPTIND - 1`
-if [ $# -lt 5 ]
+if [ $# -ne 6 ]
 then
     {
-	printf "Usage: $0 [-d] [-x x_dpy] [-y y_dpy] [-w pixels] --"
-	printf " x0 y0 width height command [args]\n"
+	printf "Usage: $0 [-d title] [-l pixels] [-r pixels]"
+	printf " [-t pixels] [-b pixels] [-w pixels] [-h pixels] "
+	printf " [-f pixels] [-X format] [-Y format]"
+	printf " x0 x1 y0 y1 plot_code doc_code"
     } 1>&2
     exit 1
 fi
 x0=$1; shift
-check_num "x coordinate of plot origin" $x0
+check_num "x coordinate at left side of plot" $x0
+x1=$1; shift
+check_num "x coordinate at right side of plot" $x1
 y0=$1; shift
-check_num "y coordinate of plot origin" $y0
-w=$1; shift
-check_num "plot width" $w
-h=$1; shift
-check_num "plot height" $h
-h_dpy=`echo "$w_dpy * $h / $w" | bc -l`
-y1=`echo "$y0 + $h" | bc -l`
+check_num "y coordinate of bottom edge of plot" $y0
+y1=$1; shift
+check_num "y coordinate of top edge of plot" $y1
+plot_code=$1; shift
+doc_code=$1; shift
 
-if test $document
-then
-    printf '<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>\n'
-    printf '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"\n'
-    printf '    "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n\n'
-fi
-
-printf '<svg
-    xmlns="http://www.w3.org/2000/svg"
-    xmlns:xlink="http://www.w3.org/1999/xlink"
-    x="%f"
-    y="%f"
-    width="%f"
-    height="%f"
-    viewBox="0.0 0.0 %.1f %.1f" >\n' $x_dpy $y_dpy $w_dpy $h_dpy $w $h
-printf '<g transform="matrix(1 0 0 -1 %.1f %.1f)">\n' \
-    `echo "-1 * $x0" | bc -l` $y1
-
-eval "$@"
-
-printf '</g>\n'
-printf '</svg>\n'
+{
+    echo title="$title"
+    echo x0=$x0
+    echo x1=$x1
+    echo y0=$y0
+    echo y1=$y1
+    echo doc_width=$doc_width
+    if test $doc_height
+    then
+	echo doc_height=$doc_height
+    fi
+    echo top=$top
+    echo right=$right
+    echo bottom=$bottom
+    echo left=$left
+    echo font_sz=$font_sz
+    echo x_fmt=$x_fmt
+    echo y_fmt=$y_fmt
+    echo 'start_plot'
+    cat $plot_code
+    echo 'end_plot'
+    cat $doc_code
+    echo 'end'
+} | xyplot.awk
