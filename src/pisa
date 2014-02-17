@@ -6,7 +6,8 @@
 # Usage:
 #	xyplot [-d title] [-l pixels] [-r pixels] [-t pixels] [-b pixels]
 #		[-w pixels] [-h pixels] [-f pixels] [-X format] [-Y format]
-#		x0 x1 y0 y1 plot_code doc_code
+#		[-p prefix_file] [-s suffix_file]
+#		x0 x1 y0 y1
 # where:
 #	-d		title of document svg element
 #	-l		left margin, pixels.
@@ -24,11 +25,12 @@
 #	y0		y coordinate of bottom of plot, plot units.
 #	y1		y coordinate of top of plot, plot units.
 #			y1 > y0.
-#	plot_code	SVG code for elements in plot area, using plot
-#			coordinates.
-#	doc_code	SVG code for elements in document, such as axis labels,
-#			legends, and captions, using document coordinates
-#			(pixels). Drawn last.
+#	-p		File with SVG code rendered before, or under, the
+#			plot document coordinates (pixels). Could also be
+#			meta data, such as CSS links.
+#	-s		File with SVG code rendered after, or on top of, the
+#			plot such as axis labels, legends, and captions, using
+#			document coordinates (pixels).
 #
 ########################################################################
 #
@@ -87,7 +89,7 @@ x_fmt="%.3g"
 y_fmt="%.3g"
 
 # Parse command line
-while getopts :d:l:r:t:b:w:h:f:X:Y: opt
+while getopts :d:l:r:t:b:w:h:f:X:Y:p:s: opt
 do
     case $opt
     in
@@ -128,6 +130,12 @@ do
 	Y)
 	    y_fmt="$OPTARG"
 	    ;;
+	p)
+	    prefix="$OPTARG"
+	    ;;
+	s)
+	    suffix="$OPTARG"
+	    ;;
 	\?)
 	    echo "$0: unknown option $OPTARG" 1>&2
 	    exit 1
@@ -135,14 +143,24 @@ do
     esac
 done
 shift `expr $OPTIND - 1`
-if [ $# -ne 6 ]
+if [ $# -ne 4 ]
 then
     {
 	printf "Usage: $0 [-d title] [-l pixels] [-r pixels]"
 	printf " [-t pixels] [-b pixels] [-w pixels] [-h pixels] "
 	printf " [-f pixels] [-X format] [-Y format]"
-	printf " x0 x1 y0 y1 plot_code doc_code"
+	printf " x0 x1 y0 y1"
     } 1>&2
+    exit 1
+fi
+if test $prefix && ! test -r $prefix
+then
+    echo "$0: no readable prefix file named $prefix" 1>&2
+    exit 1
+fi
+if test $suffix && ! test -r $suffix
+then
+    echo "$0: no readable suffix file named $suffix" 1>&2
     exit 1
 fi
 x0=$1; shift
@@ -153,8 +171,6 @@ y0=$1; shift
 check_num "y coordinate of bottom edge of plot" $y0
 y1=$1; shift
 check_num "y coordinate of top edge of plot" $y1
-plot_code=$1; shift
-doc_code=$1; shift
 
 {
     echo title="$title"
@@ -174,9 +190,17 @@ doc_code=$1; shift
     echo font_sz=$font_sz
     echo x_fmt=$x_fmt
     echo y_fmt=$y_fmt
+    if test -r $prefix
+    then
+	echo 'start_doc'
+	cat $prefix
+    fi
     echo 'start_plot'
-    cat $plot_code
+    cat
     echo 'end_plot'
-    cat $doc_code
+    if test -r $suffix
+    then
+	cat $suffix
+    fi
     echo 'end'
 } | xyplot.awk
