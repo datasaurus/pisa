@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.13 $ $Date: 2014/02/13 21:09:22 $
+# $Revision: 1.14 $ $Date: 2014/02/14 21:34:09 $
 #
 ################################################################################
 #
@@ -185,7 +185,8 @@ function mk_lbl(x_min, x_max, dx, fmt, labels,
 # This function returns the next power of 10 greater than or equal to the
 # magnitude of x.
 
-function pow10(x) {
+function pow10(x)
+{
     if (x == 0.0) {
 	return 1.0e-100;
     } else if (x > 0.0) {
@@ -198,7 +199,8 @@ function pow10(x) {
 }
 
 # Functions for floor and ceiling
-function floor(x) {
+function floor(x)
+{
     return (x > 0) ? int(x) : int(x) - 1;
 }
 function ceil(x) {
@@ -216,10 +218,72 @@ function copy_arr(dest, src)
     }
 }
 
+# Print the document header
+function print_header()
+{
+    if ( have_header ) {
+	return;
+    }   
+
+    if ( x0 == "nan" ) {
+	printf "x0 not set\n" > err;
+	exit 1;
+    }
+    if ( x1 == "nan" ) {
+	printf "x1 not set\n" > err;
+	exit 1;
+    }
+    x_width = x1 - x0;
+    if ( x_width <= 0 ) {
+	printf "plot width must be positive\n" > err;
+	exit 1;
+    }
+    if ( y0 == "nan" ) {
+	printf "y0 not set\n" > err;
+	exit 1;
+    }
+    if ( y1 == "nan" ) {
+	printf "y1 not set\n" > err;
+	exit 1;
+    }
+    y_height = y1 - y0;
+    if ( y_height <= 0 ) {
+	printf "plot height must be positive\n" > err;
+	exit 1;
+    }
+    plot_width = doc_width - left - right;
+    if ( doc_height == "nan" ) {
+	plot_height = plot_width * y_height / x_width;
+	doc_height = plot_height + top + bottom;
+    } else {
+	plot_height = doc_height - top - bottom;
+    }
+
+
+    # Initialize the SVG document
+    printf "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    printf "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\"\n";
+    printf "    \"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n";
+    printf "<svg\n";
+    printf "    width=\"%f\"\n", doc_width;
+    printf "    height=\"%f\"\n", doc_height;
+    printf "    xmlns=\"http://www.w3.org/2000/svg\"\n";
+    printf "    xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
+    if ( length(title) > 0 ) {
+	printf "  <title>%s</title>\n", title;
+    }
+    printf "\n";
+
+    have_header = 1;
+
+}
+
 # Initialize parameters with bogus values or reasonable defaults
 BEGIN {
     FS = "=";
+    title = "";
     printing = 0;
+    have_header = 0;
     doc_width = 800.0;
     doc_height = "nan";
     top = 0.0;
@@ -230,10 +294,13 @@ BEGIN {
     x1 = "nan";
     y0 = "nan";
     y1 = "nan";
+    x_width = "nan";
+    y_height = "nan";
+    plot_width = "nan";
+    plot_height = "nan";
     x_fmt = "%g";
     y_fmt = "%g";
     font_size = 12.0;
-    app_nm = "xyplot";
     err = "/dev/stderr";
 }
 
@@ -244,7 +311,7 @@ BEGIN {
 /^ *doc_width *= *[0-9.Ee-]+ *$/ {
     doc_width = $2 + 0.0;
     if ( doc_width <= 0.0 ) {
-	printf "%s: expected positive number for plot width,", app_nm > err;
+	printf "expected positive number for plot width," > err;
 	printf " got %s\n", $2 > err;
 	exit 1;
     }
@@ -252,7 +319,7 @@ BEGIN {
 /^ *doc_height *= *[0-9.Ee-]+ *$/ {
     doc_height = $2 + 0.0;
     if ( doc_height <= 0.0 ) {
-	printf "%s: expected positive number for height,", app_nm > err;
+	printf "expected positive number for height," > err;
 	printf "got %s\n", $2 > err;
 	exit 1;
     }
@@ -260,7 +327,7 @@ BEGIN {
 /^ *top *= *[0-9.Ee-]+ *$/ {
     top = $2 + 0.0;
     if ( top < 0.0 ) {
-	printf "%s: expected non-negative number" app_nm > err;
+	printf "expected non-negative number" > err;
 	printf " for top margin, got %s\n", $2 > err;
 	exit 1;
     }
@@ -268,7 +335,7 @@ BEGIN {
 /^ *right *= *[0-9.Ee-]+ *$/ {
     right = $2 + 0.0;
     if ( right < 0.0 ) {
-	printf "%s: expected non-negative number" app_nm > err;
+	printf "expected non-negative number" > err;
 	printf " for right margin, got %s\n", $2 > err;
 	exit 1;
     }
@@ -276,7 +343,7 @@ BEGIN {
 /^ *bottom *= *[0-9.Ee-]+ *$/ {
     bottom = $2 + 0.0;
     if ( bottom < 0.0 ) {
-	printf "%s: expected non-negative number" app_nm > err;
+	printf "%s: expected non-negative number" > err;
 	printf " for bottom margin, got %s\n", $2 > err;
 	exit 1;
     }
@@ -284,7 +351,7 @@ BEGIN {
 /^ *left *= *[0-9.Ee-]+ *$/ {
     left = $2 + 0.0;
     if ( left < 0.0 ) {
-	printf "%s: expected non-negative number" app_nm > err;
+	printf "%s: expected non-negative number" > err;
 	printf " for left margin, got %s\n", $2 > err;
 	exit 1;
     }
@@ -304,7 +371,7 @@ BEGIN {
 /^ *font_sz *= *[0-9.Ee-]+ *$/ {
     font_sz = $2 + 0.0;
     if ( font_sz < 0.0 ) {
-	printf "%s: expected non-negative number" app_nm > err;
+	printf "%s: expected non-negative number" > err;
 	printf " for font_sz margin, got %s\n", $2 > err;
 	exit 1;
     }
@@ -316,59 +383,16 @@ BEGIN {
     y_fmt = $2;
 }
 
+# Print SVG elements that should precede, or go under, plot.
+/start_doc/ {
+    print_header();
+    printing = 1;
+}
+
 # Validate parameters and start plotting.
 /start_plot/ {
-    if ( x0 == "nan" ) {
-	printf "%s: x0 not set\n", app_nm > err;
-	exit 1;
-    }
-    if ( x1 == "nan" ) {
-	printf "%s: x1 not set\n", app_nm > err;
-	exit 1;
-    }
-    x_width = x1 - x0;
-    if ( x_width <= 0 ) {
-	printf "%s: plot width must be positive\n", app_nm > err;
-	exit 1;
-    }
-    if ( y0 == "nan" ) {
-	printf "%s: y0 not set\n", app_nm > err;
-	exit 1;
-    }
-    if ( y1 == "nan" ) {
-	printf "%s: y1 not set\n", app_nm > err;
-	exit 1;
-    }
-    y_height = y1 - y0;
-    if ( y_height <= 0 ) {
-	printf "%s: plot height must be positive\n", app_nm > err;
-	exit 1;
-    }
-    plot_width = doc_width - left - right;
-    if ( doc_height == "nan" ) {
-	plot_height = plot_width * y_height / x_width;
-	doc_height = plot_height + top + bottom;
-    } else {
-	plot_height = doc_height - top - bottom;
-    }
 
-#   Initialize the SVG document
-    printf "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-    printf "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\"\n";
-    printf "    \"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n";
-    printf "<svg\n";
-    printf "    width=\"%f\"\n", doc_width;
-    printf "    height=\"%f\"\n", doc_height;
-    printf "    xmlns=\"http://www.w3.org/2000/svg\"\n";
-    printf "    xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
-    if ( length(title) > 0 ) {
-	printf "  <title>%s</title>\n", title;
-    }
-    printf "\n";
-
-    printf "<script\n";
-    printf "    type=\"application/ecmascript\"\n";
-    printf "    xlink:href=\"xyplot.js\" />\n";
+    print_header();
 
 #   Define plot area rectangle
     printf "<defs>\n";
