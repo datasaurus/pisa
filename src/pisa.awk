@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.14 $ $Date: 2014/02/14 21:34:09 $
+# $Revision: 1.15 $ $Date: 2014/02/17 23:28:41 $
 #
 ################################################################################
 #
@@ -386,6 +386,7 @@ BEGIN {
 # Print SVG elements that should precede, or go under, plot.
 /start_doc/ {
     print_header();
+    $0 = "";
     printing = 1;
 }
 
@@ -393,6 +394,8 @@ BEGIN {
 /start_plot/ {
 
     print_header();
+    $0 = "";
+    printing = 1;
 
 #   Define plot area rectangle
     printf "<defs>\n";
@@ -469,11 +472,11 @@ BEGIN {
     printf "    <g transform=\"matrix(1.0 0.0 0.0 -1.0 0.0 %f)\">\n", y_height;
     printf "\n";
     printf "<!-- Define elements in plot area -->\n";
-    $0 = "";
-    printing = 1;
 }
 
-# When done plotting. Terminate plot area. Draw axes and labels.
+# When done plotting, terminate plot area. Draw axes and labels.
+# Printing will continue, but subsequent elements will not use
+# plot coordinates.
 /end_plot/ {
     printf "\n";
     printf "<!-- Done defining elements in plot area -->\n"
