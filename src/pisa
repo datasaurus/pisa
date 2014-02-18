@@ -56,6 +56,8 @@
 #
 # Please send feedback to dev0@trekix.net
 #
+# $Revision: $ $Date: $
+#
 ########################################################################
 
 if test $DEBUG
@@ -190,17 +192,17 @@ check_num "y coordinate of top edge of plot" $y1
     echo font_sz=$font_sz
     echo x_fmt=$x_fmt
     echo y_fmt=$y_fmt
-    if test -r $prefix
+    if test "$prefix"
     then
 	echo 'start_doc'
-	cat $prefix
+	cat "$prefix"
     fi
     echo 'start_plot'
     cat
     echo 'end_plot'
-    if test -r $suffix
+    if test "$suffix"
     then
-	cat $suffix
+	cat "$suffix"
     fi
     echo 'end'
 } | xyplot.awk
