@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.15 $ $Date: 2014/02/17 23:28:41 $
+# $Revision: 1.16 $ $Date: 2014/02/18 18:09:38 $
 #
 ################################################################################
 #
@@ -515,6 +515,7 @@ BEGIN {
     for (x in labels) {
 	x_px = left + (x - x0) * px_per_m;
 	printf "  <text\n";
+	printf "      class=\"x axis label\"\n";
 	printf "      x=\"%f\"\n", x_px;
 	printf "      y=\"%f\"\n", y_px;
 	printf "      font-size=\"%.1f\"\n", font_sz;
@@ -531,7 +532,6 @@ BEGIN {
     x_px = left - font_sz;
     px_per_m = plot_height / y_height;
     y1 = y0 + y_height;
-    longest = 6;
     axis_lbl(y0, y1, y_fmt, plot_height / font_sz + 1, labels);
     printf "<!-- Clip area and svg element for y axis and labels -->\n";
     printf "<g\n";
@@ -547,6 +547,7 @@ BEGIN {
     for (y in labels) {
 	y_px = top + (y1 - y) * px_per_m;
 	printf "  <text\n";
+	printf "      class=\"y axis label\"\n";
 	printf "      x=\"%f\" y=\"%f\"\n", x_px, y_px;
 	printf "      font-size=\"%.0f\"\n", font_sz;
 	printf "      text-anchor=\"end\"\n";
@@ -554,9 +555,6 @@ BEGIN {
 	printf "%s", labels[y];
 	printf "  </text>\n";
 	len = length(labels[y]);
-	if ( len > longest ) {
-	    longest = len;
-	}
     }
     printf "  </svg>\n";
     printf "</g>\n";
