@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.18 $ $Date: 2014/02/25 17:42:27 $
+# $Revision: 1.19 $ $Date: 2014/02/25 21:31:31 $
 #
 ################################################################################
 #
@@ -496,7 +496,6 @@ BEGIN {
     printf "\n";
 
 #   Draw and label x axis
-    y_px = top + plot_height + font_sz;
     px_per_m = plot_width / x_width;
     axis_lbl(x0, x0 + x_width, x_fmt, plot_width / font_sz + 1, labels);
     printf "<!-- Clip area and svg element for x axis and labels -->\n";
@@ -511,10 +510,17 @@ BEGIN {
 	   x_axis_left, x_axis_top, x_axis_width, x_axis_height;
     for (x in labels) {
 	x_px = left + (x - x0) * px_per_m;
+	printf "  <line\n";
+	printf "      x1=\"%f\"\n", x_px;
+	printf "      x2=\"%f\"\n", x_px;
+	printf "      y1=\"%f\"\n", top + plot_height;
+	printf "      y2=\"%f\"\n", top + plot_height + 0.5 * font_sz;
+	printf "      stroke=\"black\"\n"
+	printf "      stroke-width=\"1\" />\n"
 	printf "  <text\n";
 	printf "      class=\"x axis label\"\n";
 	printf "      x=\"%f\"\n", x_px;
-	printf "      y=\"%f\"\n", y_px;
+	printf "      y=\"%f\"\n", top + plot_height + font_sz;
 	printf "      font-size=\"%.1f\"\n", font_sz;
 	printf "      text-anchor=\"middle\"\n";
 	printf "      dominant-baseline=\"hanging\">";
@@ -526,7 +532,6 @@ BEGIN {
     printf "\n";
 
 #   Draw and label y axis
-    x_px = left - font_sz;
     px_per_m = plot_height / y_height;
     y1 = y0 + y_height;
     axis_lbl(y0, y1, y_fmt, plot_height / font_sz + 1, labels);
@@ -543,9 +548,17 @@ BEGIN {
 	   y_axis_left, y_axis_top, y_axis_width, y_axis_height;
     for (y in labels) {
 	y_px = top + (y1 - y) * px_per_m;
+	printf "  <line\n";
+	printf "      x1=\"%f\"\n", left - 0.5 * font_sz;
+	printf "      x2=\"%f\"\n", left;
+	printf "      y1=\"%f\"\n", y_px;
+	printf "      y2=\"%f\"\n", y_px;
+	printf "      stroke=\"black\"\n"
+	printf "      stroke-width=\"1\" />\n"
 	printf "  <text\n";
 	printf "      class=\"y axis label\"\n";
-	printf "      x=\"%f\" y=\"%f\"\n", x_px, y_px;
+	printf "      x=\"%f\"\n", left - font_sz;
+	printf "      y=\"%f\"\n", y_px;
 	printf "      font-size=\"%.1f\"\n", font_sz;
 	printf "      text-anchor=\"end\"\n";
 	printf "      dominant-baseline=\"mathematical\">";
