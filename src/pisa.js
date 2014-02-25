@@ -28,7 +28,7 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.9 $ $Date: 2014/02/25 21:32:34 $
+   .	$Revision: 1.10 $ $Date: 2014/02/25 22:49:24 $
  */
 
 svgNs="http://www.w3.org/2000/svg";
@@ -200,6 +200,7 @@ function axis_lbl(x_min, x_max, prx, len, font_sz, labels_sz)
 	}
 	dx *= 0.5;			/* If dx was 2, now it is 1 */
     }
+    return l0;
 }
 
 /* Label the axes around the plot. */
@@ -256,9 +257,10 @@ function update_axes()
 
     /* Move x axis back to position at start of drag and update viewBox */
     axis.setAttribute("x", axis.x0);
-    viewBox = axis.x0 + " " + axis.viewBox.baseVal.y
-	+ " " + axis.viewBox.baseVal.width
-	+ " " + axis.viewBox.baseVal.height;
+    viewBox = axis.x0;
+    viewBox += " " + axis.viewBox.baseVal.y;
+    viewBox += " " + axis.viewBox.baseVal.width;
+    viewBox += " " + axis.viewBox.baseVal.height;
     axis.setAttribute("viewBox", viewBox);
 
     /* Create new labels for x axis */
@@ -301,9 +303,10 @@ function update_axes()
 
     /* Move y axis back to position at start of drag and update viewBox */
     axis.setAttribute("y", axis.y0);
-    viewBox = axis.viewBox.baseVal.x + " " + axis.y0
-	+ " " + axis.viewBox.baseVal.width
-	+ " " + axis.viewBox.baseVal.height;
+    viewBox = axis.viewBox.baseVal.x;
+    viewBox += " " + axis.y0;
+    viewBox += " " + axis.viewBox.baseVal.width;
+    viewBox += " " + axis.viewBox.baseVal.height;
     axis.setAttribute("viewBox", viewBox);
 
     /* Create new labels for y axis */
@@ -393,8 +396,11 @@ function end_plot_drag(evt)
     var dy = (plot.drag_y0 - evt.clientY) * vb_height / svg_height;
     var vb_x0 = plot.viewBox.baseVal.x - dx;
     var vb_y0 = plot.viewBox.baseVal.y - dy;
-    var viewBox = vb_x0 + " " + vb_y0
-	+ " " + vb_width + " " + vb_height;
+    var viewBox;
+    viewBox = vb_x0;
+    viewBox += " " + vb_y0;
+    viewBox += " " + vb_width;
+    viewBox += " " + vb_height;
     plot.setAttribute("viewBox", viewBox);
 
     /*
