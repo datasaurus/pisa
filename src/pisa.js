@@ -28,7 +28,7 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.7 $ $Date: 2014/02/25 17:53:48 $
+   .	$Revision: 1.8 $ $Date: 2014/02/25 20:14:30 $
  */
 
 svgNs="http://www.w3.org/2000/svg";
@@ -55,6 +55,13 @@ function svg_y_to_cart(svg_y)
     return cart_y_btm + (1 - (svg_y - svg_y_top) / svg_ht) * cart_ht;
 }
 
+/* Print a number with precision prx. Remove trailing 0's */
+Number.prototype.to_prx = function(prx) {
+    var s = this.toPrecision(prx);
+    s = s.replace(/0+$/, "");
+    return s.replace(/\.?$/, "");
+};
+
 /*
    This function creates a set of axis labels for an axis ranging from x_min to
    x_max with increment dx and print precision prx.
@@ -76,7 +83,7 @@ function mk_lbl(x_min, x_max, dx, prx)
     for (n = 0; n <= Math.ceil((x_max - x_min) / dx); n++) {
 	x = x0 + n * dx;
 	if ( x >= x_min - dx / 4 && x <= x_max + dx / 4 ) {
-	    lbl = x.toPrecision(prx);
+	    lbl = x.to_prx(prx);
 	    labels[lbl] = x;
 	}
     }
@@ -138,14 +145,14 @@ function axis_lbl(x_min, x_max, prx, len, font_sz, labels_sz)
     } 
 
     /* Handle axis with zero, one, or two labels */
-    lbl_str = x_min.toPrecision(prx);
+    lbl_str = x_min.to_prx(prx);
     l0[lbl_str] = x_min;
     if ( x_min === x_max || lbl_str.length * font_sz > len ) {
 	return l0;
     }
-    lbl_str = x_max.toPrecision(prx);
+    lbl_str = x_max.to_prx(prx);
     l0[lbl_str] = x_max;
-    lbl_str = x_min.toPrecision(prx) + " " + x_max.toPrecision(prx);
+    lbl_str = x_min.to_prx(prx) + " " + x_max.to_prx(prx);
     if ( lbl_str.length * font_sz > len ) {
 	return l0;
     }
@@ -429,6 +436,6 @@ function update_cursor_loc(evt)
     /* Update display */
     var prev_loc = cursor_loc.firstChild;
     var new_loc = document.createTextNode(
-	    x.toPrecision(3) + " " + y.toPrecision(3));
+	    x.to_prx(3) + " " + y.to_prx(3));
     cursor_loc.replaceChild(new_loc, prev_loc);
 }
