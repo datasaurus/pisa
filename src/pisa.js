@@ -1,12 +1,10 @@
-/* This script adds interactive behavior to a plot made by xyplot. */
+/*
+   This script adds interactive behavior to a plot made by xyplot.
+*/
+
+svgNs="http://www.w3.org/2000/svg";
 
 /*
-   start_plot_drag, plot_drag, and end_plot_drag are event handlers for
-   dragging the plot area and axes.
-
-   Cartesian plot is in a SVG element with id "plot"
-   var plot is the associated object.
-
    start_plot_drag is called at mouse down. It records the location of
    the plot in its parent as members x0 and y0. It records the initial
    cursor location in members drag_x0 and drag_y0, which remain constant
@@ -14,8 +12,6 @@
    prev_evt_x and prev_evt_y, which change at every mousemove during the
    drag.
 */
-
-svgNs="http://www.w3.org/2000/svg";
 
 function start_plot_drag(evt)
 {
@@ -41,7 +37,7 @@ function start_plot_drag(evt)
 function plot_drag(evt) {
     var plot = document.getElementById("plot");
     var dx = evt.clientX - plot.prev_evt_x;
-    var dy = evt.clientY - plot.prev_evt_y;
+    var dy = plot.prev_evt_y - evt.clientY;
     var x = Number(plot.getAttribute("x"));
     var y = Number(plot.getAttribute("y"));
     plot.setAttribute("x", x + dx);
@@ -53,7 +49,7 @@ function plot_drag(evt) {
 
     var y_axis = document.getElementById("yAxis");
     y = Number(y_axis.getAttribute("y"));
-    y_axis.setAttribute("y", y + dy);
+    y_axis.setAttribute("y", y - dy);
 
     plot.prev_evt_x = evt.clientX
     plot.prev_evt_y = evt.clientY
@@ -80,7 +76,7 @@ function end_plot_drag(evt)
     var vb_width = plot.viewBox.baseVal.width;
     var vb_height = plot.viewBox.baseVal.height;
     var dx = (evt.clientX - plot.drag_x0) * vb_width / svg_width;
-    var dy = (evt.clientY - plot.drag_y0) * vb_height / svg_height;
+    var dy = (plot.drag_y0 - evt.clientY) * vb_height / svg_height;
     var vb_x0 = plot.viewBox.baseVal.x - dx;
     var vb_y0 = plot.viewBox.baseVal.y - dy;
     var viewBox = vb_x0 + " " + vb_y0
@@ -141,7 +137,7 @@ function update_axes()
     cart_x_left = plot.viewBox.baseVal.x;
     cart_width = plot.viewBox.baseVal.width;
     cart_x_right = cart_x_left + cart_width;
-    cart_y_btm = -plot.viewBox.baseVal.y;
+    cart_y_btm = plot.viewBox.baseVal.y;
     cart_ht = plot.viewBox.baseVal.height;
     cart_y_top = cart_y_btm + cart_ht;
 
@@ -184,7 +180,7 @@ function update_axes()
     /* Update y axis */
     axis = document.getElementById("yAxis");
 
-    /* Fetch drawing attributes from first label */
+    /* Fetch drawing attributes from first y axis label */
     elems = axis.getElementsByTagName("text");
     lbl_elem = elems.item(0);
     x = lbl_elem.getAttribute("x");
@@ -372,7 +368,7 @@ function cart_y_to_svg(cart_y)
     var plot = document.getElementById("plot");
     var svg_y_top = plot.y.baseVal.value;
     var svg_ht = plot.height.baseVal.value;
-    var cart_y_btm = -plot.viewBox.baseVal.y;
+    var cart_y_btm = plot.viewBox.baseVal.y;
     var cart_ht = plot.viewBox.baseVal.height;
     return svg_y_top + (1 - (cart_y - cart_y_btm) / cart_ht) * svg_ht;
 }
@@ -383,7 +379,7 @@ function svg_y_to_cart(svg_y)
     var plot = document.getElementById("plot");
     var svg_y_top = plot.y.baseVal.value;
     var svg_ht = plot.height.baseVal.value;
-    var cart_y_btm = -plot.viewBox.baseVal.y;
+    var cart_y_btm = plot.viewBox.baseVal.y;
     var cart_ht = plot.viewBox.baseVal.height;
     return cart_y_btm + (1 - (svg_y - svg_y_top) / svg_ht) * cart_ht;
 }

@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.16 $ $Date: 2014/02/18 18:09:38 $
+# $Revision: 1.17 $ $Date: 2014/02/21 22:59:24 $
 #
 ################################################################################
 #
@@ -224,7 +224,6 @@ function print_header()
     if ( have_header ) {
 	return;
     }   
-
     if ( x0 == "nan" ) {
 	printf "x0 not set\n" > err;
 	exit 1;
@@ -259,7 +258,6 @@ function print_header()
 	plot_height = doc_height - top - bottom;
     }
 
-
     # Initialize the SVG document
     printf "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     printf "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\"\n";
@@ -272,10 +270,7 @@ function print_header()
     if ( length(title) > 0 ) {
 	printf "  <title>%s</title>\n", title;
     }
-    printf "\n";
-
     have_header = 1;
-
 }
 
 # Initialize parameters with bogus values or reasonable defaults
@@ -392,14 +387,16 @@ BEGIN {
 
 # Validate parameters and start plotting.
 /start_plot/ {
-
     print_header();
     $0 = "";
     printing = 1;
 
 #   Define plot area rectangle
-    printf "<defs>\n";
-    printf "  <!-- Plot area rectangle -->\n";
+    printf "\n<defs>\n";
+    printf "  <!-- Plot area rectangle, for clipping and boundary -->\n";
+    printf "  <!-- Use a separate rectangle for background, which will be\n";
+    printf "       dragged in the plot area coordinate system, not SVG \n";
+    printf "       document coordinates. -->\n";
     printf "  <rect\n";
     printf "      id=\"PlotRect\"\n";
     printf "      width=\"%f\"\n", plot_width;
@@ -446,6 +443,9 @@ BEGIN {
     printf "</defs>\n";
 
 #   Create plot area.
+    printf "<!-- Flip y coordinates to make them Cartesian -->\n";
+    printf "<g transform=\"matrix(1.0 0.0 0.0 -1.0 0.0 %f)\">\n", doc_height;
+    printf "\n";
     printf "<!-- Clip path and SVG element for plot area -->\n";
     printf "<g clip-path=\"url(#PlotArea)\">\n";
     printf "  <svg\n";
@@ -454,7 +454,7 @@ BEGIN {
     printf "      y=\"%f\"\n", top;
     printf "      width=\"%f\"\n", plot_width;
     printf "      height=\"%f\"\n", plot_height;
-    printf "      viewBox=\"%f %f %f %f\"\n", x0, y1, x_width, y_height;
+    printf "      viewBox=\"%f %f %f %f\"\n", x0, y0, x_width, y_height;
     printf "      preserveAspectRatio=\"none\"\n";
     printf "      onmousedown=\"start_plot_drag(evt)\"\n";
     printf "      onmousemove=\"cursor_loc(evt)\">\n";
@@ -463,14 +463,11 @@ BEGIN {
     printf "    <rect\n";
     printf "        id=\"plotBackground\"\n";
     printf "        x=\"%f\"\n", x0;
-    printf "        y=\"%f\"\n", y1;
+    printf "        y=\"%f\"\n", y0;
     printf "        width=\"%f\"\n", x_width;
     printf "        height=\"%f\"\n", y_height;
     printf "        fill=\"white\" />\n";
     printf "\n"
-    printf "    <!-- Flip y coordinates to make them Cartesian -->\n";
-    printf "    <g transform=\"matrix(1.0 0.0 0.0 -1.0 0.0 %f)\">\n", y_height;
-    printf "\n";
     printf "<!-- Define elements in plot area -->\n";
 }
 
@@ -479,12 +476,12 @@ BEGIN {
 # plot coordinates.
 /end_plot/ {
     printf "\n";
-    printf "<!-- Done defining elements in plot area -->\n"
-    printf "\n";
-    printf "      </g>\n";
-    printf "\n"
+    printf "<!-- Done defining elements in plot area -->\n\n"
     printf "  <!-- Terminate SVG element for plot area -->\n"
     printf "  </svg>\n";
+    printf "<!-- Terminate transform to Cartesian coordinates-->\n"
+    printf "</g>\n";
+    printf "\n"
     printf "<!-- Terminate clipping for plot area -->\n"
     printf "</g>\n";
     printf "\n";
