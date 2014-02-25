@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.17 $ $Date: 2014/02/21 22:59:24 $
+# $Revision: 1.18 $ $Date: 2014/02/25 17:42:27 $
 #
 ################################################################################
 #
@@ -457,7 +457,7 @@ BEGIN {
     printf "      viewBox=\"%f %f %f %f\"\n", x0, y0, x_width, y_height;
     printf "      preserveAspectRatio=\"none\"\n";
     printf "      onmousedown=\"start_plot_drag(evt)\"\n";
-    printf "      onmousemove=\"cursor_loc(evt)\">\n";
+    printf "      onmousemove=\"update_cursor_loc(evt)\">\n";
     printf "\n";
     printf "    <!-- Fill in plot area background -->\n";
     printf "    <rect\n";
@@ -517,9 +517,9 @@ BEGIN {
 	printf "      y=\"%f\"\n", y_px;
 	printf "      font-size=\"%.1f\"\n", font_sz;
 	printf "      text-anchor=\"middle\"\n";
-	printf "      dominant-baseline=\"hanging\">\n";
-	printf "    %s\n", labels[x];
-	printf "  </text>\n";
+	printf "      dominant-baseline=\"hanging\">";
+	printf "%s", labels[x];
+	printf "</text>\n";
     }
     printf "  </svg>\n";
     printf "</g>\n";
@@ -546,11 +546,11 @@ BEGIN {
 	printf "  <text\n";
 	printf "      class=\"y axis label\"\n";
 	printf "      x=\"%f\" y=\"%f\"\n", x_px, y_px;
-	printf "      font-size=\"%.0f\"\n", font_sz;
+	printf "      font-size=\"%.1f\"\n", font_sz;
 	printf "      text-anchor=\"end\"\n";
 	printf "      dominant-baseline=\"mathematical\">";
 	printf "%s", labels[y];
-	printf "  </text>\n";
+	printf "</text>\n";
 	len = length(labels[y]);
     }
     printf "  </svg>\n";
