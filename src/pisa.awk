@@ -31,10 +31,10 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.19 $ $Date: 2014/02/25 21:31:31 $
+# $Revision: 1.20 $ $Date: 2014/02/25 22:49:24 $
 #
 ################################################################################
-#
+
 # Standard input must include:
 #
 #	x0 plot_coord
@@ -70,8 +70,8 @@
 #			Document width will be left + doc_width + right
 #			Document height will be top + doc_height + bottom
 #	font_sz		font size for labels, in display units
-#	x_fmt		format for x axis labels
-#	y_fmt		format for y axis labels
+#	x_prx		number of significant figures in x axis labels
+#	y_prx		number of significant figures in y axis labels
 #	start_plot	tells the process to just pass input to output.
 #			Input should be SVG code for items in the plot.
 #	end_plot	indicates no more plot input. The process prints
@@ -82,12 +82,12 @@
 #			SVG code to finish the document, and exits.
 #
 ################################################################################
-
+
 # axis_lbl --
 #	This function determines axis label locations.
 #	x_min	(in)	start of axis.
 #	x_max	(in)	end of axis.
-#	fmt	(in) 	label format
+#	prx	(in) 	label format
 #	n_max	(in)	number of characters allowed for all labels
 #	labels	(out)	Label coordinates and strings are returned in labels.
 #			Each index is an x coordinate. Corresponding value is
@@ -100,7 +100,7 @@
 #	a space character between them fit into n_max characters. The interval
 #	will be a multiple of 10, 5, or 2 times some power of 10.
 #
-function axis_lbl(x_min, x_max, fmt, n_max, labels,
+function axis_lbl(x_min, x_max, prx, n_max, labels,
 	l0, l1, dx, t)
 {
 #   Put a tentative number of labels into l0.
@@ -115,6 +115,7 @@ function axis_lbl(x_min, x_max, fmt, n_max, labels,
 	labels["0"] = "";
 	return;
     }
+    fmt="%."prx"g";
     l0[x_min] = sprintf(fmt, x_min);
     if ( length(sprintf(fmt, x_min)) > n_max ) {
 	copy_arr(labels, l0);
@@ -154,7 +155,7 @@ function axis_lbl(x_min, x_max, fmt, n_max, labels,
 	dx *= 0.5;
     }
 }
-
+
 # Print labels from x_min to x_max with separation dx and print format fmt
 # to a string. Assign the label coordinates and label strings to the labels
 # array.  Each index in labels array will be an x coordinate. Array value will
@@ -181,7 +182,7 @@ function mk_lbl(x_min, x_max, dx, fmt, labels,
     }
     return length(lbl_str) - 1;
 }
-
+
 # This function returns the next power of 10 greater than or equal to the
 # magnitude of x.
 
@@ -217,7 +218,7 @@ function copy_arr(dest, src)
 	dest[i] = src[i];
     }
 }
-
+
 # Print the document header
 function print_header()
 {
@@ -272,7 +273,7 @@ function print_header()
     }
     have_header = 1;
 }
-
+
 # Initialize parameters with bogus values or reasonable defaults
 BEGIN {
     FS = "=";
@@ -293,12 +294,12 @@ BEGIN {
     y_height = "nan";
     plot_width = "nan";
     plot_height = "nan";
-    x_fmt = "%g";
-    y_fmt = "%g";
+    x_prx = "3";
+    y_prx = "3";
     font_size = 12.0;
     err = "/dev/stderr";
 }
-
+
 # Set parameters from standard input
 /title/ {
     title = $2;
@@ -371,11 +372,11 @@ BEGIN {
 	exit 1;
     }
 }
-/^ *x_fmt *= *[0-9.Ee-]+ *$/ {
-    x_fmt = $2;
+/^ *x_prx *= *[0-9.Ee-]+ *$/ {
+    x_prx = $2;
 }
-/^ *y_fmt *= *[0-9.Ee-]+ *$/ {
-    y_fmt = $2;
+/^ *y_prx *= *[0-9.Ee-]+ *$/ {
+    y_prx = $2;
 }
 
 # Print SVG elements that should precede, or go under, plot.
@@ -384,7 +385,7 @@ BEGIN {
     $0 = "";
     printing = 1;
 }
-
+
 # Validate parameters and start plotting.
 /start_plot/ {
     print_header();
@@ -470,7 +471,7 @@ BEGIN {
     printf "\n"
     printf "<!-- Define elements in plot area -->\n";
 }
-
+
 # When done plotting, terminate plot area. Draw axes and labels.
 # Printing will continue, but subsequent elements will not use
 # plot coordinates.
@@ -497,7 +498,7 @@ BEGIN {
 
 #   Draw and label x axis
     px_per_m = plot_width / x_width;
-    axis_lbl(x0, x0 + x_width, x_fmt, plot_width / font_sz + 1, labels);
+    axis_lbl(x0, x0 + x_width, x_prx, plot_width / font_sz + 1, labels);
     printf "<!-- Clip area and svg element for x axis and labels -->\n";
     printf "<g clip-path=\"url(#xAxisClip)\">\n";
     printf "  <svg\n";
@@ -534,7 +535,7 @@ BEGIN {
 #   Draw and label y axis
     px_per_m = plot_height / y_height;
     y1 = y0 + y_height;
-    axis_lbl(y0, y1, y_fmt, plot_height / font_sz + 1, labels);
+    axis_lbl(y0, y1, y_prx, plot_height / font_sz + 1, labels);
     printf "<!-- Clip area and svg element for y axis and labels -->\n";
     printf "<g\n";
     printf "    clip-path=\"url(#yAxisClip)\">\n";
@@ -573,7 +574,7 @@ BEGIN {
     $0 = "";
 
 }
-
+
 /end/ {
     printing = 0;
 }

@@ -5,9 +5,8 @@
 #
 # Usage:
 #	xyplot [-d title] [-l pixels] [-r pixels] [-t pixels] [-b pixels]
-#		[-w pixels] [-h pixels] [-f pixels] [-X format] [-Y format]
-#		[-p prefix_file] [-s suffix_file]
-#		x0 x1 y0 y1
+#		[-w pixels] [-h pixels] [-f pixels] [-X precison] [-Y precison]
+#		[-p prefix_file] [-s suffix_file] x0 x1 y0 y1
 # where:
 #	-d		title of document svg element
 #	-l		left margin, pixels.
@@ -17,8 +16,8 @@
 #	-w		document width, pixels.
 #	-h		document height, pixels.
 #	-f		font size, pixels.
-#	-X		format for x axis labels. See printf (1).
-#	-Y		format for y axis labels. See printf (1).
+#	-X		number of significant figures in x axis labels.
+#	-Y		number of significant figures in y axis labels.
 #	x0		x coordinate of left side of plot, plot units.
 #	x1		x coordinate of right side of plot, plot units.
 #			x1 > x0.
@@ -56,7 +55,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: $ $Date: $
+# $Revision: 1.10 $ $Date: 2014/02/18 18:08:37 $
 #
 ########################################################################
 
@@ -87,8 +86,8 @@ top="`echo $font_sz \* 3 | bc -l`"
 bottom="`echo $font_sz \* 6 | bc -l`"
 doc_width="800"
 doc_height=
-x_fmt="%.3g"
-y_fmt="%.3g"
+x_prx="3"
+y_prx="3"
 
 # Parse command line
 while getopts :d:l:r:t:b:w:h:f:X:Y:p:s: opt
@@ -127,10 +126,10 @@ do
 	    check_num "font size" $font_sz
 	    ;;
 	X)
-	    x_fmt="$OPTARG"
+	    x_prx="$OPTARG"
 	    ;;
 	Y)
-	    y_fmt="$OPTARG"
+	    y_prx="$OPTARG"
 	    ;;
 	p)
 	    prefix="$OPTARG"
@@ -150,7 +149,7 @@ then
     {
 	printf "Usage: $0 [-d title] [-l pixels] [-r pixels]"
 	printf " [-t pixels] [-b pixels] [-w pixels] [-h pixels] "
-	printf " [-f pixels] [-X format] [-Y format]"
+	printf " [-f pixels] [-X precison] [-Y precison]"
 	printf " x0 x1 y0 y1"
     } 1>&2
     exit 1
@@ -190,8 +189,8 @@ check_num "y coordinate of top edge of plot" $y1
     echo bottom=$bottom
     echo left=$left
     echo font_sz=$font_sz
-    echo x_fmt=$x_fmt
-    echo y_fmt=$y_fmt
+    echo x_prx=$x_prx
+    echo y_prx=$y_prx
     if test "$prefix"
     then
 	echo 'start_doc'
