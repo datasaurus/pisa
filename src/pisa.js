@@ -28,10 +28,12 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.10 $ $Date: 2014/02/25 22:49:24 $
+   .	$Revision: 1.11 $ $Date: 2014/02/25 23:06:52 $
  */
 
-svgNs="http://www.w3.org/2000/svg";
+svgNs="http://www.w3.org/2000/svg";	/* To create SVG elements */
+x_prx = y_prx = 3;			/* Number of significant digits in
+					   axis labels */
 
 /* Convert Cartesian y coordinate in plot to SVG y coordinate in document */
 function cart_x_to_svg(cart_x)
@@ -66,7 +68,7 @@ function svg_y_to_cart(svg_y)
     return cart_btm + (1 - (svg_y - svg_y_top) / svg_ht) * cart_ht;
 }
 
-/* Print a number with precision prx. Remove trailing 0's */
+/* Print a number with precision prx. Remove trailing "." and 0's */
 Number.prototype.to_prx = function(prx) {
     var s = this.toPrecision(prx);
     s = s.replace(/0+$/, "");
@@ -211,7 +213,6 @@ function update_axes()
     var viewBox;			/* axis viewBox */
     var elems;				/* Axis elements */
     var x, y;				/* Coordinate or axis location */
-    var prx = 3;			/* Label precision */
     var font_sz;			/* Label font size */
     var labels;				/* Result from axis_lbl */
     var lbl;				/* Property of labels */
@@ -267,7 +268,7 @@ function update_axes()
     while ( axis.lastChild ) {
 	axis.removeChild(axis.lastChild);
     }
-    labels = axis_lbl(cart_left, cart_right, prx, svg_width, font_sz,
+    labels = axis_lbl(cart_left, cart_right, x_prx, svg_width, font_sz,
 	    labels_x_sz);
     for (lbl in labels) {
 	if ( labels.hasOwnProperty(lbl) ) {
@@ -313,7 +314,7 @@ function update_axes()
     while ( axis.lastChild ) {
 	axis.removeChild(axis.lastChild);
     }
-    labels = axis_lbl(cart_btm, cart_top, prx, svg_height, font_sz,
+    labels = axis_lbl(cart_btm, cart_top, y_prx, svg_height, font_sz,
 	    labels_y_sz);
     for (lbl in labels) {
 	if ( labels.hasOwnProperty(lbl) ) {
