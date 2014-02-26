@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.20 $ $Date: 2014/02/25 22:49:24 $
+# $Revision: 1.21 $ $Date: 2014/02/26 17:32:09 $
 #
 ################################################################################
 
@@ -87,8 +87,9 @@
 #	This function determines axis label locations.
 #	x_min	(in)	start of axis.
 #	x_max	(in)	end of axis.
-#	prx	(in) 	label format
-#	n_max	(in)	number of characters allowed for all labels
+#	prx	(in) 	number of significant digits in each label.
+#	n_max	(in)	number of characters allowed for all labels.
+#	orient  (in)	orientation, "h" or "v" for horizontal or vertical.
 #	labels	(out)	Label coordinates and strings are returned in labels.
 #			Each index is an x coordinate. Corresponding value is
 #			the string to print there.
@@ -100,7 +101,7 @@
 #	a space character between them fit into n_max characters. The interval
 #	will be a multiple of 10, 5, or 2 times some power of 10.
 #
-function axis_lbl(x_min, x_max, prx, n_max, labels,
+function axis_lbl(x_min, x_max, prx, n_max, orient, labels,
 	l0, l1, dx, t)
 {
 #   Put a tentative number of labels into l0.
@@ -129,7 +130,7 @@ function axis_lbl(x_min, x_max, prx, n_max, labels,
     l0[x_max] = sprintf(fmt, x_max);
     dx = pow10(x_max - x_min);
     while (1) {
-	if ( mk_lbl(x_min, x_max, dx, fmt, l1) > n_max ) {
+	if ( mk_lbl(x_min, x_max, dx, fmt, orient, l1) > n_max ) {
 	    copy_arr(labels, l0);
 	    return;
 	} else {
@@ -137,7 +138,7 @@ function axis_lbl(x_min, x_max, prx, n_max, labels,
 	}
 
 	dx *= 0.5;
-	if ( mk_lbl(x_min, x_max, dx, fmt, l1) > n_max ) {
+	if ( mk_lbl(x_min, x_max, dx, fmt, orient, l1) > n_max ) {
 	    copy_arr(labels, l0);
 	    return;
 	} else {
@@ -145,7 +146,7 @@ function axis_lbl(x_min, x_max, prx, n_max, labels,
 	}
 
 	dx *= 0.4;
-	if ( mk_lbl(x_min, x_max, dx, fmt, l1) > n_max ) {
+	if ( mk_lbl(x_min, x_max, dx, fmt, orient, l1) > n_max ) {
 	    copy_arr(labels, l0);
 	    return;
 	} else {
@@ -159,10 +160,12 @@ function axis_lbl(x_min, x_max, prx, n_max, labels,
 # Print labels from x_min to x_max with separation dx and print format fmt
 # to a string. Assign the label coordinates and label strings to the labels
 # array.  Each index in labels array will be an x coordinate. Array value will
-# be the label to print there. Return the length of the string.
+# be the label to print there. If orient is "h", return the length of the
+# string containing all labels. Otherwise, assume the axis is vertical and
+# return the number of labels.
 
-function mk_lbl(x_min, x_max, dx, fmt, labels,
-	l, x0, n, n_lbl, lbl_str, lbl)
+function mk_lbl(x_min, x_max, dx, fmt, orient, labels,
+	l, x0, n, n_lbl, lbl_str, lbl, n_tot)
 {
     for (l in labels) {
 	delete labels[l];
@@ -172,15 +175,19 @@ function mk_lbl(x_min, x_max, dx, fmt, labels,
     x_min -= dx / 4;
     x_max += dx / 4;
     lbl_str = "";
-    for (n = 0; n <= n_lbl; n++) {
+    for (n = n_tot = 0; n <= n_lbl; n++) {
 	x = x0 + n * dx;
 	if ( x >= x_min && x <= x_max ) {
 	    lbl = sprintf(fmt, x);
 	    labels[x] = lbl;
-	    lbl_str = lbl_str " " lbl;
+	    if ( orient == "h" ) {
+		n_tot += length(lbl) + 1;
+	    } else {
+		n_tot += 2;
+	    }
 	}
     }
-    return length(lbl_str) - 1;
+    return n_tot;
 }
 
 # This function returns the next power of 10 greater than or equal to the
@@ -498,7 +505,7 @@ BEGIN {
 
 #   Draw and label x axis
     px_per_m = plot_width / x_width;
-    axis_lbl(x0, x0 + x_width, x_prx, plot_width / font_sz + 1, labels);
+    axis_lbl(x0, x0 + x_width, x_prx, plot_width / font_sz + 1, "h", labels);
     printf "<!-- Clip area and svg element for x axis and labels -->\n";
     printf "<g clip-path=\"url(#xAxisClip)\">\n";
     printf "  <svg\n";
@@ -535,7 +542,7 @@ BEGIN {
 #   Draw and label y axis
     px_per_m = plot_height / y_height;
     y1 = y0 + y_height;
-    axis_lbl(y0, y1, y_prx, plot_height / font_sz + 1, labels);
+    axis_lbl(y0, y1, y_prx, plot_height / font_sz + 1, "v", labels);
     printf "<!-- Clip area and svg element for y axis and labels -->\n";
     printf "<g\n";
     printf "    clip-path=\"url(#yAxisClip)\">\n";
