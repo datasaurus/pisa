@@ -28,7 +28,7 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.11 $ $Date: 2014/02/25 23:06:52 $
+   .	$Revision: 1.12 $ $Date: 2014/02/26 20:30:46 $
  */
 
 svgNs="http://www.w3.org/2000/svg";	/* To create SVG elements */
@@ -255,6 +255,9 @@ function update_axes()
     lbl_elem = elems.item(0);
     y = lbl_elem.getAttribute("y");
     font_sz = Number(lbl_elem.getAttribute("font-size"));
+    if ( font_sz === 0 ) {
+	return;
+    }
 
     /* Move x axis back to position at start of drag and update viewBox */
     axis.setAttribute("x", axis.x0);
