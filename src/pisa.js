@@ -28,7 +28,7 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.13 $ $Date: 2014/03/01 04:27:07 $
+   .	$Revision: 1.14 $ $Date: 2014/03/05 22:16:40 $
  */
 
 svgNs="http://www.w3.org/2000/svg";	/* To create SVG elements */
@@ -140,7 +140,7 @@ function labels_y_sz(labels)
 					   of this element. */
     var lbl;				/* Member of labels */
     var axis;				/* x axis */
-    var ext;				/* Character extent */
+    var bbox;				/* Bounding box for an element */
     var font_ht;			/* Character height */
     var n;				/* Loop index */
     var ht;				/* Return value */
@@ -150,12 +150,8 @@ function labels_y_sz(labels)
     lbl_elem.appendChild(document.createTextNode("0123456789"));
     axis = document.getElementById("yAxis");
     axis.appendChild(lbl_elem);
-    for (font_ht = 0.0, n = 0; n < 10; n++) {
-	ext = lbl_elem.getExtentOfChar(n);
-	if ( ext.height > font_ht ) {
-	    font_ht = ext.height;
-	}
-    }
+    bbox = lbl_elem.getBBox();
+    font_ht = bbox.height;
     axis.removeChild(lbl_elem);
 
     /* Determine height needed for axis labels */
