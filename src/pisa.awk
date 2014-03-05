@@ -31,10 +31,10 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.21 $ $Date: 2014/02/26 17:32:09 $
+# $Revision: 1.22 $ $Date: 2014/02/26 20:32:23 $
 #
 ################################################################################
-
+
 # Standard input must include:
 #
 #	x0 plot_coord
@@ -82,7 +82,7 @@
 #			SVG code to finish the document, and exits.
 #
 ################################################################################
-
+
 # axis_lbl --
 #	This function determines axis label locations.
 #	x_min	(in)	start of axis.
@@ -156,7 +156,7 @@ function axis_lbl(x_min, x_max, prx, n_max, orient, labels,
 	dx *= 0.5;
     }
 }
-
+
 # Print labels from x_min to x_max with separation dx and print format fmt
 # to a string. Assign the label coordinates and label strings to the labels
 # array.  Each index in labels array will be an x coordinate. Array value will
@@ -189,7 +189,7 @@ function mk_lbl(x_min, x_max, dx, fmt, orient, labels,
     }
     return n_tot;
 }
-
+
 # This function returns the next power of 10 greater than or equal to the
 # magnitude of x.
 
@@ -225,7 +225,7 @@ function copy_arr(dest, src)
 	dest[i] = src[i];
     }
 }
-
+
 # Print the document header
 function print_header()
 {
@@ -280,7 +280,7 @@ function print_header()
     }
     have_header = 1;
 }
-
+
 # Initialize parameters with bogus values or reasonable defaults
 BEGIN {
     FS = "=";
@@ -306,7 +306,7 @@ BEGIN {
     font_size = 12.0;
     err = "/dev/stderr";
 }
-
+
 # Set parameters from standard input
 /title/ {
     title = $2;
@@ -392,7 +392,7 @@ BEGIN {
     $0 = "";
     printing = 1;
 }
-
+
 # Validate parameters and start plotting.
 /start_plot/ {
     print_header();
@@ -478,7 +478,7 @@ BEGIN {
     printf "\n"
     printf "<!-- Define elements in plot area -->\n";
 }
-
+
 # When done plotting, terminate plot area. Draw axes and labels.
 # Printing will continue, but subsequent elements will not use
 # plot coordinates.
@@ -581,7 +581,7 @@ BEGIN {
     $0 = "";
 
 }
-
+
 /end/ {
     printing = 0;
 }
