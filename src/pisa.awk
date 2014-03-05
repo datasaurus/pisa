@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.23 $ $Date: 2014/03/05 22:03:38 $
+# $Revision: 1.25 $ $Date: 2014/03/05 23:08:52 $
 #
 ################################################################################
 
@@ -268,6 +268,9 @@ function print_header()
 
     # Initialize the SVG document
     printf "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    for (s = 0; s < num_sheets; s++) {
+	printf "<?xml-stylesheet href=\"%s\" type=\"text/css\"?>\n", sheet[s];
+    }
     printf "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\"\n";
     printf "    \"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n";
     printf "<svg\n";
@@ -285,6 +288,7 @@ function print_header()
 BEGIN {
     FS = "=";
     title = "";
+    num_sheets = 0;
     printing = 0;
     have_header = 0;
     doc_width = 800.0;
@@ -310,6 +314,10 @@ BEGIN {
 # Set parameters from standard input
 /title/ {
     title = $2;
+}
+/style/ {
+    sheet[num_sheets] = $2;
+    num_sheets++;
 }
 /^ *doc_width *= *[0-9.Ee-]+ *$/ {
     doc_width = $2 + 0.0;
