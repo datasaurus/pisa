@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.22 $ $Date: 2014/02/26 20:32:23 $
+# $Revision: 1.23 $ $Date: 2014/03/05 22:03:38 $
 #
 ################################################################################
 
@@ -46,7 +46,6 @@
 #	right pixels
 #	bottom pixels
 #	left pixels
-#	font_sz size
 #	start_plot
 #	end_plot
 #	end
@@ -69,7 +68,6 @@
 #	left		size of the area left of the plot, in display units
 #			Document width will be left + doc_width + right
 #			Document height will be top + doc_height + bottom
-#	font_sz		font size for labels, in display units
 #	x_prx		number of significant figures in x axis labels
 #	y_prx		number of significant figures in y axis labels
 #	start_plot	tells the process to just pass input to output.
@@ -303,7 +301,11 @@ BEGIN {
     plot_height = "nan";
     x_prx = "3";
     y_prx = "3";
-    font_size = 12.0;
+
+#   Font size is used only for setting axis clip area.
+#   In web browser, set display font size with CSS.
+#   In other displays, configure or modify SVG downstream.
+    font_sz = 12.0;
     err = "/dev/stderr";
 }
 
@@ -370,14 +372,6 @@ BEGIN {
 }
 /^ *y1 *= *[0-9.Ee-]+ *$/ {
     y1 = $2 + 0.0;
-}
-/^ *font_sz *= *[0-9.Ee-]+ *$/ {
-    font_sz = $2 + 0.0;
-    if ( font_sz < 0.0 ) {
-	printf "%s: expected non-negative number" > err;
-	printf " for font_sz margin, got %s\n", $2 > err;
-	exit 1;
-    }
 }
 /^ *x_prx *= *[0-9.Ee-]+ *$/ {
     x_prx = $2;
@@ -529,7 +523,6 @@ BEGIN {
 	printf "      class=\"x axis label\"\n";
 	printf "      x=\"%f\"\n", x_px;
 	printf "      y=\"%f\"\n", top + plot_height + font_sz;
-	printf "      font-size=\"%.1f\"\n", font_sz;
 	printf "      text-anchor=\"middle\"\n";
 	printf "      dominant-baseline=\"hanging\">";
 	printf "%s", labels[x];
@@ -567,7 +560,6 @@ BEGIN {
 	printf "      class=\"y axis label\"\n";
 	printf "      x=\"%f\"\n", left - font_sz;
 	printf "      y=\"%f\"\n", y_px;
-	printf "      font-size=\"%.1f\"\n", font_sz;
 	printf "      text-anchor=\"end\"\n";
 	printf "      dominant-baseline=\"mathematical\">";
 	printf "%s", labels[y];
