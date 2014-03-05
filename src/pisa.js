@@ -28,7 +28,7 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.12 $ $Date: 2014/02/26 20:30:46 $
+   .	$Revision: 1.13 $ $Date: 2014/03/01 04:27:07 $
  */
 
 svgNs="http://www.w3.org/2000/svg";	/* To create SVG elements */
@@ -104,27 +104,68 @@ function mk_lbl(x_min, x_max, dx, prx)
 }
 
 /* Compute length of a set of labels for a horizontal axis */ 
-function labels_x_sz(labels, font_sz)
+function labels_x_sz(labels)
 {
-    var lbl, len = 0;
+    var lbl_elem;			/* Element with the text of all labels.
+					   Never displayed. Function return
+					   value will be computed text length
+					   of this element. */
+    var len;				/* Return value */
+    var lbl;				/* Member of labels */
+    var all;				/* String with text content of all
+					   labels */
+    var axis;				/* x axis */
+
+    all = "";
     for (lbl in labels) {
 	if ( labels.hasOwnProperty(lbl) ) {
-	    len += (lbl.length + 1) * font_sz;
+	    all = all + "____" + lbl;
 	}
     }
+    lbl_elem = document.createElementNS(svgNs, "text");
+    lbl_elem.appendChild(document.createTextNode(all));
+    axis = document.getElementById("xAxis");
+    axis.appendChild(lbl_elem);
+    len = lbl_elem.getComputedTextLength();
+    axis.removeChild(lbl_elem);
     return len;
 }
 
 /* Compute length of a set of labels for a vertical axis */ 
-function labels_y_sz(labels, font_sz)
+function labels_y_sz(labels)
 {
-    var lbl, len = 0;
-    for (lbl in labels) {
-	if ( labels.hasOwnProperty(lbl) ) {
-	    len += 2 * font_sz;
+    var lbl_elem;			/* Element with the text of all labels.
+					   Never displayed. Function return
+					   value will be computed text length
+					   of this element. */
+    var lbl;				/* Member of labels */
+    var axis;				/* x axis */
+    var ext;				/* Character extent */
+    var font_ht;			/* Character height */
+    var n;				/* Loop index */
+    var ht;				/* Return value */
+
+    /* Compute the height of a number */
+    lbl_elem = document.createElementNS(svgNs, "text");
+    lbl_elem.appendChild(document.createTextNode("0123456789"));
+    axis = document.getElementById("yAxis");
+    axis.appendChild(lbl_elem);
+    for (font_ht = 0.0, n = 0; n < 10; n++) {
+	ext = lbl_elem.getExtentOfChar(n);
+	if ( ext.height > font_ht ) {
+	    font_ht = ext.height;
 	}
     }
-    return len;
+    axis.removeChild(lbl_elem);
+
+    /* Determine height needed for axis labels */
+    ht = 0.0;
+    for (lbl in labels) {
+	if ( labels.hasOwnProperty(lbl) ) {
+	    ht += 4 * font_ht;
+	}
+    }
+    return ht;
 }
 
 /*
@@ -134,7 +175,6 @@ function labels_y_sz(labels, font_sz)
    x_max	coordinate at end of axis.
    prx		precision for printing a coordinate
    len		axis length, SVG display units
-   font_sz	font size
    labels_sz	function to compute the space needed for the text of a set
    .		of labels, given a labels object (return value of mk_lbl) and
    .		font size.
@@ -144,7 +184,7 @@ function labels_y_sz(labels, font_sz)
    axis at which to print the label.
  */
 
-function axis_lbl(x_min, x_max, prx, len, font_sz, labels_sz)
+function axis_lbl(x_min, x_max, prx, len, labels_sz)
 {
    var dx;				/* Proposed label spacing */
    var lbl_str;				/* Coordinate(s) as a string */
@@ -160,13 +200,13 @@ function axis_lbl(x_min, x_max, prx, len, font_sz, labels_sz)
     /* Handle axis with zero, one, or two labels */
     lbl_str = x_min.to_prx(prx);
     l0[lbl_str] = x_min;
-    if ( x_min === x_max || lbl_str.length * font_sz > len ) {
+    if ( x_min === x_max ) {
 	return l0;
     }
     lbl_str = x_max.to_prx(prx);
     l0[lbl_str] = x_max;
     lbl_str = x_min.to_prx(prx) + " " + x_max.to_prx(prx);
-    if ( lbl_str.length * font_sz > len ) {
+    if ( labels_sz(l0) > len ) {
 	return l0;
     }
 
@@ -181,21 +221,21 @@ function axis_lbl(x_min, x_max, prx, len, font_sz, labels_sz)
     dx = Math.pow(10.0, Math.ceil(Math.log(x_max - x_min) / Math.LN10));
     while (true) {
 	l1 = mk_lbl(x_min, x_max, dx, prx);
-	if ( labels_sz(l1, font_sz) > len ) {
+	if ( labels_sz(l1) > len ) {
 	    return l0;
 	} else {
 	    l0 = l1;
 	}
 	dx *= 0.5;			/* If dx was 5, now it is 2 */
 	l1 = mk_lbl(x_min, x_max, dx, prx);
-	if ( labels_sz(l1, font_sz) > len ) {
+	if ( labels_sz(l1) > len ) {
 	    return l0;
 	} else {
 	    l0 = l1;
 	}
 	dx *= 0.4;			/* If dx was 2, now it is 1 */
 	l1 = mk_lbl(x_min, x_max, dx, prx);
-	if ( labels_sz(l1, font_sz) > len ) {
+	if ( labels_sz(l1) > len ) {
 	    return l0;
 	} else {
 	    l0 = l1;
@@ -213,10 +253,10 @@ function update_axes()
     var viewBox;			/* axis viewBox */
     var elems;				/* Axis elements */
     var x, y;				/* Coordinate or axis location */
-    var font_sz;			/* Label font size */
     var labels;				/* Result from axis_lbl */
     var lbl;				/* Property of labels */
     var lbl_elem;			/* Coordinate text element */
+    var tick_len = 6.0;			/* Length of an axis tick */
     var svg_left;			/* SVG coordinate of top edge of plot */
     var svg_width;			/* Plot width, SVG coordinates */
     var svg_top;			/* SVG coordinate of top edge of plot */
@@ -254,10 +294,6 @@ function update_axes()
     elems = axis.getElementsByTagName("text");
     lbl_elem = elems.item(0);
     y = lbl_elem.getAttribute("y");
-    font_sz = Number(lbl_elem.getAttribute("font-size"));
-    if ( font_sz === 0 ) {
-	return;
-    }
 
     /* Move x axis back to position at start of drag and update viewBox */
     axis.setAttribute("x", axis.x0);
@@ -271,25 +307,26 @@ function update_axes()
     while ( axis.lastChild ) {
 	axis.removeChild(axis.lastChild);
     }
-    labels = axis_lbl(cart_left, cart_right, x_prx, svg_width, font_sz,
-	    labels_x_sz);
+    labels = axis_lbl(cart_left, cart_right, x_prx, svg_width, labels_x_sz);
     for (lbl in labels) {
 	if ( labels.hasOwnProperty(lbl) ) {
+	    /* Create label text */
 	    lbl_elem = document.createElementNS(svgNs, "text");
 	    lbl_elem.setAttribute("class", "x axis label");
 	    x = cart_x_to_svg(labels[lbl]);
 	    lbl_elem.setAttribute("x", x);
 	    lbl_elem.setAttribute("y", y);
-	    lbl_elem.setAttribute("font-size", font_sz);
 	    lbl_elem.setAttribute("text-anchor", "middle");
 	    lbl_elem.setAttribute("dominant-baseline", "hanging");
 	    lbl_elem.appendChild(document.createTextNode(lbl));
 	    axis.appendChild(lbl_elem);
+
+	    /* Create label tick mark */
 	    lbl_elem = document.createElementNS(svgNs, "line");
 	    lbl_elem.setAttribute("x1", x);
 	    lbl_elem.setAttribute("x2", x);
 	    lbl_elem.setAttribute("y1", svg_btm);
-	    lbl_elem.setAttribute("y2", svg_btm + 0.5 * font_sz);
+	    lbl_elem.setAttribute("y2", svg_btm + tick_len);
 	    lbl_elem.setAttribute("stroke", "black");
 	    lbl_elem.setAttribute("stroke-width", "1");
 	    axis.appendChild(lbl_elem);
@@ -303,7 +340,6 @@ function update_axes()
     elems = axis.getElementsByTagName("text");
     lbl_elem = elems.item(0);
     x = lbl_elem.getAttribute("x");
-    font_sz = Number(lbl_elem.getAttribute("font-size"));
 
     /* Move y axis back to position at start of drag and update viewBox */
     axis.setAttribute("y", axis.y0);
@@ -317,22 +353,23 @@ function update_axes()
     while ( axis.lastChild ) {
 	axis.removeChild(axis.lastChild);
     }
-    labels = axis_lbl(cart_btm, cart_top, y_prx, svg_height, font_sz,
-	    labels_y_sz);
+    labels = axis_lbl(cart_btm, cart_top, y_prx, svg_height, labels_y_sz);
     for (lbl in labels) {
 	if ( labels.hasOwnProperty(lbl) ) {
+	    /* Create label text */
 	    lbl_elem = document.createElementNS(svgNs, "text");
 	    lbl_elem.setAttribute("class", "y axis label");
 	    y = cart_y_to_svg(labels[lbl]);
 	    lbl_elem.setAttribute("x", x);
 	    lbl_elem.setAttribute("y", y);
-	    lbl_elem.setAttribute("font-size", font_sz);
 	    lbl_elem.setAttribute("text-anchor", "end");
 	    lbl_elem.setAttribute("dominant-baseline", "mathematical");
 	    lbl_elem.appendChild(document.createTextNode(lbl));
 	    axis.appendChild(lbl_elem);
+
+	    /* Create label tick mark */
 	    lbl_elem = document.createElementNS(svgNs, "line");
-	    lbl_elem.setAttribute("x1", svg_left - 0.5 * font_sz);
+	    lbl_elem.setAttribute("x1", svg_left - tick_len);
 	    lbl_elem.setAttribute("x2", svg_left);
 	    lbl_elem.setAttribute("y1", y);
 	    lbl_elem.setAttribute("y2", y);
