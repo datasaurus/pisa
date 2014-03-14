@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.25 $ $Date: 2014/03/05 23:08:52 $
+# $Revision: 1.26 $ $Date: 2014/03/05 23:25:18 $
 #
 ################################################################################
 
@@ -472,6 +472,7 @@ BEGIN {
     printf "      height=\"%f\"\n", plot_height;
     printf "      viewBox=\"%f %f %f %f\"\n", x0, y0, x_width, y_height;
     printf "      preserveAspectRatio=\"none\"\n";
+    printf "      onload=\"init(evt)\"\n";
     printf "      onmousedown=\"start_plot_drag(evt)\"\n";
     printf "      onmousemove=\"update_cursor_loc(evt)\">\n";
     printf "\n";
