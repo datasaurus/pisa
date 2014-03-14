@@ -28,9 +28,10 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.14 $ $Date: 2014/03/05 22:16:40 $
+   .	$Revision: 1.15 $ $Date: 2014/03/05 22:57:44 $
  */
 
+plot = {};				/* Object with plot variables */
 svgNs="http://www.w3.org/2000/svg";	/* To create SVG elements */
 x_prx = y_prx = 3;			/* Number of significant digits in
 					   axis labels */
@@ -38,33 +39,40 @@ x_prx = y_prx = 3;			/* Number of significant digits in
 /* Convert Cartesian y coordinate in plot to SVG y coordinate in document */
 function cart_x_to_svg(cart_x)
 {
-    var plot = document.getElementById("plot");
-    var svg_left = plot.x.baseVal.value;
-    var svg_width = plot.width.baseVal.value;
-    var cart_left = plot.viewBox.baseVal.x;
-    var cart_width = plot.viewBox.baseVal.width;
+    var svg_left = plot.elem.x.baseVal.value;
+    var svg_width = plot.elem.width.baseVal.value;
+    var cart_left = plot.elem.viewBox.baseVal.x;
+    var cart_width = plot.elem.viewBox.baseVal.width;
     return svg_left + (cart_x - cart_left) / cart_width * svg_width;
+}
+
+/* Convert SVG x coordinate in document to Cartesian in plot */
+function svg_x_to_cart(svg_x)
+{
+    var svg_left = plot.elem.x.baseVal.value;
+    var svg_width = plot.elem.width.baseVal.value;
+    var cart_left = plot.elem.viewBox.baseVal.x;
+    var cart_width = plot.elem.viewBox.baseVal.width;
+    return cart_left + (svg_x - svg_left) * cart_width / svg_width;
 }
 
 /* Convert Cartesian y coordinate in plot to SVG y coordinate in document */
 function cart_y_to_svg(cart_y)
 {
-    var plot = document.getElementById("plot");
-    var svg_y_top = plot.y.baseVal.value;
-    var svg_ht = plot.height.baseVal.value;
-    var cart_btm = plot.viewBox.baseVal.y;
-    var cart_ht = plot.viewBox.baseVal.height;
+    var svg_y_top = plot.elem.y.baseVal.value;
+    var svg_ht = plot.elem.height.baseVal.value;
+    var cart_btm = plot.elem.viewBox.baseVal.y;
+    var cart_ht = plot.elem.viewBox.baseVal.height;
     return svg_y_top + (1 - (cart_y - cart_btm) / cart_ht) * svg_ht;
 }
 
 /* Convert SVG y coordinate in document to Cartesian in plot */
 function svg_y_to_cart(svg_y)
 {
-    var plot = document.getElementById("plot");
-    var svg_y_top = plot.y.baseVal.value;
-    var svg_ht = plot.height.baseVal.value;
-    var cart_btm = plot.viewBox.baseVal.y;
-    var cart_ht = plot.viewBox.baseVal.height;
+    var svg_y_top = plot.elem.y.baseVal.value;
+    var svg_ht = plot.elem.height.baseVal.value;
+    var cart_btm = plot.elem.viewBox.baseVal.y;
+    var cart_ht = plot.elem.viewBox.baseVal.height;
     return cart_btm + (1 - (svg_y - svg_y_top) / svg_ht) * cart_ht;
 }
 
@@ -114,7 +122,6 @@ function labels_x_sz(labels)
     var lbl;				/* Member of labels */
     var all;				/* String with text content of all
 					   labels */
-    var axis;				/* x axis */
 
     all = "";
     for (lbl in labels) {
@@ -124,10 +131,9 @@ function labels_x_sz(labels)
     }
     lbl_elem = document.createElementNS(svgNs, "text");
     lbl_elem.appendChild(document.createTextNode(all));
-    axis = document.getElementById("xAxis");
-    axis.appendChild(lbl_elem);
+    plot.x_axis.elem.appendChild(lbl_elem);
     len = lbl_elem.getComputedTextLength();
-    axis.removeChild(lbl_elem);
+    plot.x_axis.elem.removeChild(lbl_elem);
     return len;
 }
 
@@ -139,7 +145,6 @@ function labels_y_sz(labels)
 					   value will be computed text length
 					   of this element. */
     var lbl;				/* Member of labels */
-    var axis;				/* x axis */
     var bbox;				/* Bounding box for an element */
     var font_ht;			/* Character height */
     var n;				/* Loop index */
@@ -148,11 +153,10 @@ function labels_y_sz(labels)
     /* Compute the height of a number */
     lbl_elem = document.createElementNS(svgNs, "text");
     lbl_elem.appendChild(document.createTextNode("0123456789"));
-    axis = document.getElementById("yAxis");
-    axis.appendChild(lbl_elem);
+    plot.y_axis.elem.appendChild(lbl_elem);
     bbox = lbl_elem.getBBox();
     font_ht = bbox.height;
-    axis.removeChild(lbl_elem);
+    plot.y_axis.elem.removeChild(lbl_elem);
 
     /* Determine height needed for axis labels */
     ht = 0.0;
@@ -244,8 +248,6 @@ function axis_lbl(x_min, x_max, prx, len, labels_sz)
 /* Label the axes around the plot. */
 function update_axes()
 {
-    var axis;				/* SVG element with axis */
-    var plot;				/* SVG element with plot area */
     var viewBox;			/* axis viewBox */
     var elems;				/* Axis elements */
     var x, y;				/* Coordinate or axis location */
@@ -270,38 +272,34 @@ function update_axes()
 					   edge of plot */
     var cart_ht;			/* cart_top - cart_btm */
 
-    plot = document.getElementById("plot");
-    svg_left = plot.x.baseVal.value;
-    svg_width = plot.width.baseVal.value;
-    svg_top = plot.y.baseVal.value;
-    svg_height = plot.height.baseVal.value;
+    svg_left = plot.elem.x.baseVal.value;
+    svg_width = plot.elem.width.baseVal.value;
+    svg_top = plot.elem.y.baseVal.value;
+    svg_height = plot.elem.height.baseVal.value;
     svg_btm = svg_top + svg_height;
-    cart_left = plot.viewBox.baseVal.x;
-    cart_width = plot.viewBox.baseVal.width;
+    cart_left = plot.elem.viewBox.baseVal.x;
+    cart_width = plot.elem.viewBox.baseVal.width;
     cart_right = cart_left + cart_width;
-    cart_btm = plot.viewBox.baseVal.y;
-    cart_ht = plot.viewBox.baseVal.height;
+    cart_btm = plot.elem.viewBox.baseVal.y;
+    cart_ht = plot.elem.viewBox.baseVal.height;
     cart_top = cart_btm + cart_ht;
 
-    /* Update x axis */
-    axis = document.getElementById("xAxis");
-
-    /* Fetch drawing attributes from first label */
-    elems = axis.getElementsByTagName("text");
+    /* Fetch drawing attributes from first label of x axis */
+    elems = plot.x_axis.elem.getElementsByTagName("text");
     lbl_elem = elems.item(0);
     y = lbl_elem.getAttribute("y");
 
     /* Move x axis back to position at start of drag and update viewBox */
-    axis.setAttribute("x", axis.x0);
-    viewBox = axis.x0;
-    viewBox += " " + axis.viewBox.baseVal.y;
-    viewBox += " " + axis.viewBox.baseVal.width;
-    viewBox += " " + axis.viewBox.baseVal.height;
-    axis.setAttribute("viewBox", viewBox);
+    plot.x_axis.elem.setAttribute("x", plot.x_axis.x0);
+    viewBox = plot.x_axis.x0;
+    viewBox += " " + plot.x_axis.elem.viewBox.baseVal.y;
+    viewBox += " " + plot.x_axis.elem.viewBox.baseVal.width;
+    viewBox += " " + plot.x_axis.elem.viewBox.baseVal.height;
+    plot.x_axis.elem.setAttribute("viewBox", viewBox);
 
     /* Create new labels for x axis */
-    while ( axis.lastChild ) {
-	axis.removeChild(axis.lastChild);
+    while ( plot.x_axis.elem.lastChild ) {
+	plot.x_axis.elem.removeChild(plot.x_axis.elem.lastChild);
     }
     labels = axis_lbl(cart_left, cart_right, x_prx, svg_width, labels_x_sz);
     for (lbl in labels) {
@@ -315,7 +313,7 @@ function update_axes()
 	    lbl_elem.setAttribute("text-anchor", "middle");
 	    lbl_elem.setAttribute("dominant-baseline", "hanging");
 	    lbl_elem.appendChild(document.createTextNode(lbl));
-	    axis.appendChild(lbl_elem);
+	    plot.x_axis.elem.appendChild(lbl_elem);
 
 	    /* Create label tick mark */
 	    lbl_elem = document.createElementNS(svgNs, "line");
@@ -325,29 +323,26 @@ function update_axes()
 	    lbl_elem.setAttribute("y2", svg_btm + tick_len);
 	    lbl_elem.setAttribute("stroke", "black");
 	    lbl_elem.setAttribute("stroke-width", "1");
-	    axis.appendChild(lbl_elem);
+	    plot.x_axis.elem.appendChild(lbl_elem);
 	}
     }
 
-    /* Update y axis */
-    axis = document.getElementById("yAxis");
-
     /* Fetch drawing attributes from first y axis label */
-    elems = axis.getElementsByTagName("text");
+    elems = plot.y_axis.elem.getElementsByTagName("text");
     lbl_elem = elems.item(0);
     x = lbl_elem.getAttribute("x");
 
     /* Move y axis back to position at start of drag and update viewBox */
-    axis.setAttribute("y", axis.y0);
-    viewBox = axis.viewBox.baseVal.x;
-    viewBox += " " + axis.y0;
-    viewBox += " " + axis.viewBox.baseVal.width;
-    viewBox += " " + axis.viewBox.baseVal.height;
-    axis.setAttribute("viewBox", viewBox);
+    plot.y_axis.elem.setAttribute("y", plot.y_axis.y0);
+    viewBox = plot.y_axis.elem.viewBox.baseVal.x;
+    viewBox += " " + plot.y_axis.y0;
+    viewBox += " " + plot.y_axis.elem.viewBox.baseVal.width;
+    viewBox += " " + plot.y_axis.elem.viewBox.baseVal.height;
+    plot.y_axis.elem.setAttribute("viewBox", viewBox);
 
     /* Create new labels for y axis */
-    while ( axis.lastChild ) {
-	axis.removeChild(axis.lastChild);
+    while ( plot.y_axis.elem.lastChild ) {
+	plot.y_axis.elem.removeChild(plot.y_axis.elem.lastChild);
     }
     labels = axis_lbl(cart_btm, cart_top, y_prx, svg_height, labels_y_sz);
     for (lbl in labels) {
@@ -361,7 +356,7 @@ function update_axes()
 	    lbl_elem.setAttribute("text-anchor", "end");
 	    lbl_elem.setAttribute("dominant-baseline", "mathematical");
 	    lbl_elem.appendChild(document.createTextNode(lbl));
-	    axis.appendChild(lbl_elem);
+	    plot.y_axis.elem.appendChild(lbl_elem);
 
 	    /* Create label tick mark */
 	    lbl_elem = document.createElementNS(svgNs, "line");
@@ -371,7 +366,7 @@ function update_axes()
 	    lbl_elem.setAttribute("y2", y);
 	    lbl_elem.setAttribute("stroke", "black");
 	    lbl_elem.setAttribute("stroke-width", "1");
-	    axis.appendChild(lbl_elem);
+	    plot.y_axis.elem.appendChild(lbl_elem);
 	}
     }
 }
@@ -389,21 +384,18 @@ function update_axes()
 
 function plot_drag(evt)
 {
-    var plot = document.getElementById("plot");
     var dx = evt.clientX - plot.prev_evt_x;
     var dy = plot.prev_evt_y - evt.clientY;
-    var x = Number(plot.getAttribute("x"));
-    var y = Number(plot.getAttribute("y"));
-    plot.setAttribute("x", x + dx);
-    plot.setAttribute("y", y + dy);
+    var x = Number(plot.elem.getAttribute("x"));
+    var y = Number(plot.elem.getAttribute("y"));
+    plot.elem.setAttribute("x", x + dx);
+    plot.elem.setAttribute("y", y + dy);
 
-    var x_axis = document.getElementById("xAxis");
-    x = Number(x_axis.getAttribute("x"));
-    x_axis.setAttribute("x", x + dx);
+    x = Number(plot.x_axis.elem.getAttribute("x"));
+    plot.x_axis.elem.setAttribute("x", x + dx);
 
-    var y_axis = document.getElementById("yAxis");
-    y = Number(y_axis.getAttribute("y"));
-    y_axis.setAttribute("y", y - dy);
+    y = Number(plot.y_axis.elem.getAttribute("y"));
+    plot.y_axis.elem.setAttribute("y", y - dy);
 
     plot.prev_evt_x = evt.clientX;
     plot.prev_evt_y = evt.clientY;
@@ -418,27 +410,25 @@ function plot_drag(evt)
 
 function end_plot_drag(evt)
 {
-    var plot = document.getElementById("plot");
-
     /*
        Compute total distance dragged, in CARTESIAN coordinates, and move
        plot viewBox by this amount
     */
 
-    var svg_width = plot.width.baseVal.value;
-    var svg_height = plot.height.baseVal.value;
-    var vb_width = plot.viewBox.baseVal.width;
-    var vb_height = plot.viewBox.baseVal.height;
+    var svg_width = plot.elem.width.baseVal.value;
+    var svg_height = plot.elem.height.baseVal.value;
+    var vb_width = plot.elem.viewBox.baseVal.width;
+    var vb_height = plot.elem.viewBox.baseVal.height;
     var dx = (evt.clientX - plot.drag_x0) * vb_width / svg_width;
     var dy = (plot.drag_y0 - evt.clientY) * vb_height / svg_height;
-    var vb_x0 = plot.viewBox.baseVal.x - dx;
-    var vb_y0 = plot.viewBox.baseVal.y - dy;
+    var vb_x0 = plot.elem.viewBox.baseVal.x - dx;
+    var vb_y0 = plot.elem.viewBox.baseVal.y - dy;
     var viewBox;
     viewBox = vb_x0;
     viewBox += " " + vb_y0;
     viewBox += " " + vb_width;
     viewBox += " " + vb_height;
-    plot.setAttribute("viewBox", viewBox);
+    plot.elem.setAttribute("viewBox", viewBox);
 
     /*
        Restore plot and background to their position at start of drag.
@@ -446,16 +436,16 @@ function end_plot_drag(evt)
        dragged to because of the adjments to the viewBox.
      */
 
-    plot.setAttribute("x", plot.x0);
-    plot.setAttribute("y", plot.y0);
+    plot.elem.setAttribute("x", plot.x0);
+    plot.elem.setAttribute("y", plot.y0);
     var background = document.getElementById("plotBackground");
     background.setAttribute("x", vb_x0);
     background.setAttribute("y", vb_y0);
 
     update_axes();
 
-    plot.removeEventListener("mousemove", plot_drag, false);
-    plot.removeEventListener("mouseup", end_plot_drag, false);
+    plot.elem.removeEventListener("mousemove", plot_drag, false);
+    plot.elem.removeEventListener("mouseup", end_plot_drag, false);
 }
 
 /*
@@ -469,17 +459,14 @@ function end_plot_drag(evt)
 
 function start_plot_drag(evt)
 {
-    var plot = document.getElementById("plot");
-    plot.x0 = Number(plot.getAttribute("x"));
-    plot.y0 = Number(plot.getAttribute("y"));
+    plot.x0 = Number(plot.elem.getAttribute("x"));
+    plot.y0 = Number(plot.elem.getAttribute("y"));
     plot.prev_evt_x = plot.drag_x0 = evt.clientX;
     plot.prev_evt_y = plot.drag_y0 = evt.clientY;
-    plot.addEventListener("mousemove", plot_drag, false);
-    plot.addEventListener("mouseup", end_plot_drag, false);
-    var x_axis = document.getElementById("xAxis");
-    x_axis.x0 = Number(x_axis.getAttribute("x"));
-    var y_axis = document.getElementById("yAxis");
-    y_axis.y0 = Number(y_axis.getAttribute("y"));
+    plot.elem.addEventListener("mousemove", plot_drag, false);
+    plot.elem.addEventListener("mouseup", end_plot_drag, false);
+    plot.x_axis.x0 = Number(plot.x_axis.elem.getAttribute("x"));
+    plot.y_axis.y0 = Number(plot.y_axis.elem.getAttribute("y"));
 }
 
 /*
@@ -489,25 +476,21 @@ function start_plot_drag(evt)
 
 function update_cursor_loc(evt)
 {
-    /* Identify elements */
     var cursor_loc = document.getElementById("cursor_loc");
-    var plot = document.getElementById("plot");
-
-    /* Compute Cartesian coordinates of cursor location */
-    var svg_x0 = plot.x.baseVal.value;
-    var svg_y0 = plot.y.baseVal.value;
-    var svg_width = plot.width.baseVal.value;
-    var svg_height = plot.height.baseVal.value;
-    var vb_width = plot.viewBox.baseVal.width;
-    var vb_height = plot.viewBox.baseVal.height;
-    var vb_x0 = plot.viewBox.baseVal.x;
-    var vb_y0 = plot.viewBox.baseVal.y;
-    var x = vb_x0 + (evt.clientX - svg_x0) * vb_width / svg_width;
+    var x = svg_x_to_cart(evt.clientX);
     var y = svg_y_to_cart(evt.clientY);
-
-    /* Update display */
     var prev_loc = cursor_loc.firstChild;
-    var new_loc = document.createTextNode(
-	    x.to_prx(3) + " " + y.to_prx(3));
+    var dpy = x.to_prx(x_prx) + " " + y.to_prx(x_prx);
+    var new_loc = document.createTextNode(dpy);
     cursor_loc.replaceChild(new_loc, prev_loc);
+}
+
+/* Callback for document load event. Initialize the global plot variable. */
+function init(evt)
+{
+    plot.elem = document.getElementById("plot");
+    plot.x_axis = {};
+    plot.x_axis.elem = document.getElementById("xAxis");
+    plot.y_axis = {};
+    plot.y_axis.elem = document.getElementById("yAxis");
 }
