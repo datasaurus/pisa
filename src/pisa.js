@@ -28,15 +28,13 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.16 $ $Date: 2014/03/14 21:31:24 $
+   .	$Revision: 1.17 $ $Date: 2014/03/15 01:00:23 $
  */
 
 /* Global variables (members of the window object) */
 var plot = {};				/* Hold information needed for
 					   interactive plot */
 svgNs="http://www.w3.org/2000/svg";	/* To create SVG elements */
-x_prx = y_prx = 3;			/* Number of significant digits in
-					   axis labels */
 
 /* Convert Cartesian y coordinate in plot to SVG y coordinate in document */
 plot.cart_x_to_svg = function(cart_x)
@@ -305,7 +303,7 @@ plot.update_axes = function()
     while ( plot.x_axis.elem.lastChild ) {
 	plot.x_axis.elem.removeChild(plot.x_axis.elem.lastChild);
     }
-    labels = axis_lbl(cart_left, cart_right, x_prx, svg_width, labels_x_sz);
+    labels = axis_lbl(cart_left, cart_right, plot.x_prx, svg_width, labels_x_sz);
     for (lbl in labels) {
 	if ( labels.hasOwnProperty(lbl) ) {
 	    /* Create label text */
@@ -348,7 +346,7 @@ plot.update_axes = function()
     while ( plot.y_axis.elem.lastChild ) {
 	plot.y_axis.elem.removeChild(plot.y_axis.elem.lastChild);
     }
-    labels = axis_lbl(cart_btm, cart_top, y_prx, svg_height, labels_y_sz);
+    labels = axis_lbl(cart_btm, cart_top, plot.y_prx, svg_height, labels_y_sz);
     for (lbl in labels) {
 	if ( labels.hasOwnProperty(lbl) ) {
 	    /* Create label text */
@@ -484,7 +482,7 @@ plot.update_cursor_loc = function(evt)
     var x = plot.svg_x_to_cart(evt.clientX);
     var y = plot.svg_y_to_cart(evt.clientY);
     var prev_loc = cursor_loc.firstChild;
-    var dpy = to_prx(x, x_prx) + " " + to_prx(y, x_prx);
+    var dpy = to_prx(x, plot.x_prx) + " " + to_prx(y, plot.x_prx);
     var new_loc = document.createTextNode(dpy);
     cursor_loc.replaceChild(new_loc, prev_loc);
 }
@@ -499,5 +497,7 @@ function init(evt)
     plot.y_axis.elem = document.getElementById("yAxis");
     plot.elem.addEventListener("mousedown", plot.start_plot_drag, false);
     plot.elem.addEventListener("mousemove", plot.update_cursor_loc, false);
+    plot.x_prx = plot.y_prx = 3;	/* Number of significant digits in
+					   axis labels */
 }
 
