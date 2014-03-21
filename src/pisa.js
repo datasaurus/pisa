@@ -28,7 +28,7 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.18 $ $Date: 2014/03/15 01:04:27 $
+   .	$Revision: 1.19 $ $Date: 2014/03/19 20:39:07 $
  */
 
 /* Global variables (members of the window object) */
@@ -481,9 +481,8 @@ plot.update_cursor_loc = function(evt)
     var cursor_loc = document.getElementById("cursor_loc");
     var x = plot.svg_x_to_cart(evt.clientX);
     var y = plot.svg_y_to_cart(evt.clientY);
-    var text = cursor_loc.firstChild;
     var dpy = to_prx(x, plot.x_prx) + " " + to_prx(y, plot.x_prx);
-    text.replaceData(0, text.length, dpy);
+    var text = cursor_loc.textContent = dpy;
 }
 
 /* Callback for document load event. Initialize the plot object. */
