@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.27 $ $Date: 2014/03/14 21:31:57 $
+# $Revision: 1.28 $ $Date: 2014/03/15 00:59:45 $
 #
 ################################################################################
 
@@ -277,8 +277,7 @@ function print_header()
     printf "    width=\"%f\"\n", doc_width;
     printf "    height=\"%f\"\n", doc_height;
     printf "    xmlns=\"http://www.w3.org/2000/svg\"\n";
-    printf "    xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n";
-    printf "    onload=\"init(evt)\">\n";
+    printf "    xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
     if ( length(title) > 0 ) {
 	printf "  <title>%s</title>\n", title;
     }
@@ -472,7 +471,8 @@ BEGIN {
     printf "      width=\"%f\"\n", plot_width;
     printf "      height=\"%f\"\n", plot_height;
     printf "      viewBox=\"%f %f %f %f\"\n", x0, y0, x_width, y_height;
-    printf "      preserveAspectRatio=\"none\"\n>";
+    printf "      preserveAspectRatio=\"none\"\n";
+    printf "      onload=\"xyplot_init(evt)\">\n";
     printf "\n";
     printf "    <!-- Fill in plot area background -->\n";
     printf "    <rect\n";
