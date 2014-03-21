@@ -28,7 +28,7 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.20 $ $Date: 2014/03/21 19:24:06 $
+   .	$Revision: 1.21 $ $Date: 2014/03/21 21:28:28 $
  */
 
 /*
@@ -515,4 +515,5 @@ function xyplot_init(evt)
     plot.addEventListener("mousedown", start_plot_drag, false);
     plot.addEventListener("mousemove", update_cursor_loc, false);
 }
+window.addEventListener("load", xyplot_init, false);
 
