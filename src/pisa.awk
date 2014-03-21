@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.30 $ $Date: 2014/03/21 21:54:49 $
+# $Revision: 1.31 $ $Date: 2014/03/21 22:21:01 $
 #
 ################################################################################
 
@@ -277,7 +277,8 @@ function print_header()
     printf "    width=\"%f\"\n", doc_width;
     printf "    height=\"%f\"\n", doc_height;
     printf "    xmlns=\"http://www.w3.org/2000/svg\"\n";
-    printf "    xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
+    printf "    xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n";
+    printf "    id=\"outermost\">\n";
     if ( length(title) > 0 ) {
 	printf "  <title>%s</title>\n", title;
     }
