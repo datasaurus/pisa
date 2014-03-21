@@ -28,16 +28,16 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.22 $ $Date: 2014/03/21 22:20:55 $
+   .	$Revision: 1.23 $ $Date: 2014/03/21 22:40:37 $
  */
 
 /*
-   Callback for plot load event. Store plot variables and functions as members
-   of the xyplot_init call object, which will persist in closures assigned to
-   event handlers.
+   Load callback. Plot variables and functions become members of the event
+   handler call object, which will persist in closures assigned to event
+   handlers.
  */
 
-(document.getElementById("outermost")).addEventListener("load", function (evt) {
+window.addEventListener("load", function (evt) {
 	/* These objects store information about the plot elements */
 	var plot = document.getElementById("plot");
 	var x_axis = document.getElementById("xAxis");
