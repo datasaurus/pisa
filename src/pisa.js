@@ -28,7 +28,7 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.23 $ $Date: 2014/03/21 22:40:37 $
+   .	$Revision: 1.24 $ $Date: 2014/03/21 22:58:31 $
  */
 
 /*
@@ -43,16 +43,6 @@ window.addEventListener("load", function (evt) {
 	var x_axis = document.getElementById("xAxis");
 	var y_axis = document.getElementById("yAxis");
 	var cursor_loc = document.getElementById("cursor_loc");
-
-	/*
-	   SVG coordinates of plot and axis elements. Elements should be
-	   returned to these positions after drag and zoom events.
-	 */
-
-	var plot_x0 = Number(plot.getAttribute("x"));
-	var plot_y0 = Number(plot.getAttribute("y"));
-	var x_axis_x0 = Number(x_axis.getAttribute("x"));
-	var y_axis_y0 = Number(y_axis.getAttribute("y"));
 
 	/* Number of significant digits in axis labels */
 	var x_prx = 3;
@@ -422,13 +412,21 @@ window.addEventListener("load", function (evt) {
 	/*
 	   start_plot_drag, plot_drag, and end_plot_drag event handlers enabled
 	   user to drag Cartesian plot and axes with the mouse. These variables
-	   store information about the current drag in this scope.
+	   store information in this scope about the current drag.
 	 */
 
+	var plot_x0, plot_y0;		/* SVG coordinates of plot element */
+	var x_axis_x0;			/* SVG x coordinate of x axis element */
+	var y_axis_y0;			/* SVG y coordinate of y axis element */
 	var drag_x0, drag_y0;		/* SVG coordinates of mouse at start
 					   of drag */
 	var prev_evt_x, prev_evt_y;	/* SVG coordinates of mouse at previous
 					   mouse event during drag */
+
+	plot_x0 = Number(plot.getAttribute("x"));
+	plot_y0 = Number(plot.getAttribute("y"));
+	x_axis_x0 = Number(x_axis.getAttribute("x"));
+	y_axis_y0 = Number(y_axis.getAttribute("y"));
 
 	/*
 	   plot_drag is called at each mouse move while the plot is being
