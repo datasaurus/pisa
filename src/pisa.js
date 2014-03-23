@@ -28,8 +28,10 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.24 $ $Date: 2014/03/21 22:58:31 $
+   .	$Revision: 1.25 $ $Date: 2014/03/22 00:05:24 $
  */
+
+"use strict"
 
 /*
    Load callback. Plot variables and functions become members of the event
