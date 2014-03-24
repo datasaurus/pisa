@@ -28,7 +28,7 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.25 $ $Date: 2014/03/22 00:05:24 $
+   .	$Revision: 1.26 $ $Date: 2014/03/23 18:57:01 $
  */
 
 "use strict"
@@ -529,8 +529,7 @@ window.addEventListener("load", function (evt) {
 	{
 	    var x = svg_x_to_cart(evt.clientX);
 	    var y = svg_y_to_cart(evt.clientY);
-	    var dpy = to_prx(x, x_prx) + " " + to_prx(y, x_prx);
-	    var text = cursor_loc.textContent = dpy;
+	    cursor_loc.textContent = to_prx(x, x_prx) + " " + to_prx(y, x_prx);
 	}
 
 	plot.addEventListener("mousedown", start_plot_drag, false);
