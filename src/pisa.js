@@ -28,10 +28,8 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.26 $ $Date: 2014/03/23 18:57:01 $
+   .	$Revision: 1.27 $ $Date: 2014/03/24 21:10:08 $
  */
-
-"use strict"
 
 /*
    Load callback. Plot variables and functions become members of the event
@@ -40,6 +38,10 @@
  */
 
 window.addEventListener("load", function (evt) {
+
+	"use strict";
+	/*jslint browser:true */
+
 	/* These objects store information about the plot elements */
 	var plot = document.getElementById("plot");
 	var x_axis = document.getElementById("xAxis");
@@ -51,6 +53,21 @@ window.addEventListener("load", function (evt) {
 	var y_prx = 3;
 
 	var svgNs="http://www.w3.org/2000/svg";
+
+	/*
+	   start_plot_drag, plot_drag, and end_plot_drag event handlers, defined
+	   below, enable user to drag Cartesian plot and axes with the mouse.
+	   These variables store information in this scope about the current
+	   drag.
+	 */
+
+	var plot_x0, plot_y0;		/* SVG coordinates of plot element */
+	var x_axis_x0;			/* SVG x coordinate of x axis element */
+	var y_axis_y0;			/* SVG y coordinate of y axis element */
+	var drag_x0, drag_y0;		/* SVG coordinates of mouse at start
+					   of drag */
+	var prev_evt_x, prev_evt_y;	/* SVG coordinates of mouse at previous
+					   mouse event during drag */
 
 	/*
 	   Convert Cartesian y coordinate in plot to SVG y coordinate in
@@ -410,20 +427,6 @@ window.addEventListener("load", function (evt) {
 		}
 	    }
 	}
-
-	/*
-	   start_plot_drag, plot_drag, and end_plot_drag event handlers enabled
-	   user to drag Cartesian plot and axes with the mouse. These variables
-	   store information in this scope about the current drag.
-	 */
-
-	var plot_x0, plot_y0;		/* SVG coordinates of plot element */
-	var x_axis_x0;			/* SVG x coordinate of x axis element */
-	var y_axis_y0;			/* SVG y coordinate of y axis element */
-	var drag_x0, drag_y0;		/* SVG coordinates of mouse at start
-					   of drag */
-	var prev_evt_x, prev_evt_y;	/* SVG coordinates of mouse at previous
-					   mouse event during drag */
 
 	plot_x0 = Number(plot.getAttribute("x"));
 	plot_y0 = Number(plot.getAttribute("y"));
