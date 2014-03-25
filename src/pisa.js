@@ -28,7 +28,7 @@
    .	
    .	Please send feedback to dev0@trekix.net
    .	
-   .	$Revision: 1.27 $ $Date: 2014/03/24 21:10:08 $
+   .	$Revision: 1.28 $ $Date: 2014/03/24 22:22:09 $
  */
 
 /*
@@ -275,14 +275,14 @@ window.addEventListener("load", function (evt) {
 		} else {
 		    l0 = l1;
 		}
-		dx *= 0.5;			/* If dx was 5, now it is 2 */
+		dx *= 0.5;			/* If dx was 10, now it is 5 */
 		l1 = mk_lbl(x_min, x_max, dx, prx);
 		if ( labels_sz(l1) > len ) {
 		    return l0;
 		} else {
 		    l0 = l1;
 		}
-		dx *= 0.4;			/* If dx was 2, now it is 1 */
+		dx *= 0.4;			/* If dx was 5, now it is 2 */
 		l1 = mk_lbl(x_min, x_max, dx, prx);
 		if ( labels_sz(l1) > len ) {
 		    return l0;
