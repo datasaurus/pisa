@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.32 $ $Date: 2014/03/27 18:52:31 $
+   .	$Revision: 1.33 $ $Date: 2014/03/27 18:56:15 $
  */
 
 /*
@@ -59,7 +59,7 @@ window.addEventListener("load", function (evt) {
 	var x_labels = [];
 	var y_labels = [];
 
-	var tick_len = 6.0;		/* Length of an axis tick */
+	var tick_len = 9.0;		/* Length of an axis tick */
 
 	/* Number of significant digits in axis labels */
 	var x_prx = 3;
@@ -70,14 +70,13 @@ window.addEventListener("load", function (evt) {
 	/*
 	   start_plot_drag, plot_drag, and end_plot_drag event handlers, defined
 	   below, enable user to drag Cartesian plot and axes with the mouse.
-	   These variables store information in this scope about the current
-	   drag.
+	   These variables store information in this scope about the initial
+	   positions of the plot elements and about the current drag.
 	 */
 
 	var plot_left, plot_top;	/* SVG coordinates of plot element */
 	var x_axis_left, x_axis_top;	/* SVG coordinates of x axis element */
 	var y_axis_left, y_axis_top;	/* SVG coordinates of y axis element */
-	var y_axis_rght;		/* Right side of y axis element */
 	var drag_x0, drag_y0;		/* SVG coordinates of mouse at start
 					   of drag */
 	var prev_evt_x, prev_evt_y;	/* SVG coordinates of mouse at previous
@@ -88,7 +87,6 @@ window.addEventListener("load", function (evt) {
 	x_axis_left = Number(x_axis.getAttribute("x"));
 	x_axis_top = Number(x_axis.getAttribute("y"));
 	y_axis_left = Number(y_axis.getAttribute("x"));
-	y_axis_rght = y_axis_left + Number(y_axis.getAttribute("width"));
 	y_axis_top = Number(y_axis.getAttribute("y"));
 
 	/* Local function definitions */
@@ -167,29 +165,37 @@ window.addEventListener("load", function (evt) {
 	}
 
 	/*
+	   Hide label, which must be a label object with text and tic elements.
+	   The elements still exist in the document.
+	 */ 
+
+	function hide_label(label) {
+	    label.lbl.setAttribute("x", -80.0);
+	    label.lbl.setAttribute("y", -80.0);
+	    label.lbl.textContent = "";
+	    label.tic.setAttribute("x1", -80.0);
+	    label.tic.setAttribute("x2", -90.0);
+	    label.tic.setAttribute("y1", -80.0);
+	    label.tic.setAttribute("y2", -90.0);
+	}
+
+	/*
 	   Apply coordinate list coords to x axis. Return total display length
 	   of the labels.
 	 */
 
 	function apply_x_coords(coords)
 	{
-	    var l;
-	    var textLength;
-	    var x_svg;
-	    var lbl, tic;
+	    var x_svg, y_svg;		/* Label location */
+	    var plot_right;		/* SVG x coordinate of right side
+					   of plot */
+	    var l;			/* Label index */
+	    var textLength;		/* SVG width required display text of
+					   all labels */
+	    var lbl, tic;		/* New label and tic elements */
 
-	    /*
-	       If this is the first call, remove labels from static document.
-	       This function call will create and manage new labels.
-	    */
-
-	    if ( x_labels.length === 0 ) {
-		while ( x_axis.lastChild ) {
-		    x_axis.removeChild(x_axis.lastChild);
-		}
-	    }
-
-	    /* Create and position labels and tick marks */ 
+	    y_svg = x_axis_top + 1.5 * tick_len;
+	    plot_right = plot_left + Number(plot.getAttribute("width"));
 	    for (l = 0, textLength = 0.0; l < coords.length; l++) {
 		if ( !x_labels[l] ) {
 		    lbl = document.createElementNS(svgNs, "text");
@@ -207,27 +213,22 @@ window.addEventListener("load", function (evt) {
 		    x_labels[l].tic = tic;
 		}
 		x_svg = cart_x_to_svg(coords[l]);
-		x_labels[l].lbl.setAttribute("x", x_svg);
-		x_labels[l].lbl.setAttribute("y", x_axis_top + tick_len);
-		x_labels[l].lbl.textContent = to_prx(coords[l], x_prx);
-		x_labels[l].tic.setAttribute("x1", x_svg);
-		x_labels[l].tic.setAttribute("x2", x_svg);
-		x_labels[l].tic.setAttribute("y1", x_axis_top);
-		x_labels[l].tic.setAttribute("y2", x_axis_top + tick_len);
-		textLength += x_labels[l].lbl.getComputedTextLength();
+		if ( plot_left <= x_svg && x_svg <= plot_right ) {
+		    x_labels[l].lbl.setAttribute("x", x_svg);
+		    x_labels[l].lbl.setAttribute("y", y_svg);
+		    x_labels[l].lbl.textContent = to_prx(coords[l], x_prx);
+		    x_labels[l].tic.setAttribute("x1", x_svg);
+		    x_labels[l].tic.setAttribute("x2", x_svg);
+		    x_labels[l].tic.setAttribute("y1", x_axis_top);
+		    x_labels[l].tic.setAttribute("y2", x_axis_top + tick_len);
+		    textLength += x_labels[l].lbl.getComputedTextLength();
+		} else {
+		    hide_label(x_labels[l]);
+		}
 	    }
-
-	    /* Keep extra label elements, but hide them */
 	    for ( ; l < x_labels.length; l++) {
-		x_labels[l].lbl.setAttribute("x", -80.0);
-		x_labels[l].lbl.setAttribute("y", -80.0);
-		x_labels[l].lbl.textContent = "";
-		x_labels[l].tic.setAttribute("x1", -80.0);
-		x_labels[l].tic.setAttribute("x2", -90.0);
-		x_labels[l].tic.setAttribute("y1", -80.0);
-		x_labels[l].tic.setAttribute("y2", -90.0);
+		hide_label(x_labels[l]);
 	    }
-
 	    return textLength;
 	}
 
@@ -238,24 +239,20 @@ window.addEventListener("load", function (evt) {
 
 	function apply_y_coords(coords)
 	{
-	    var y_svg;			/* SVG x coordinate of a label */
+	    var x_svg;			/* SVG x coordinates of right side of
+					   y axis element */
+	    var y_svg;			/* SVG y coordinate of a label */
+	    var width;			/* Width of y axis element */
+	    var plot_btm;		/* SVG y coordinate of bottom of plot */
 	    var l;			/* Label, coordinate index */
 	    var bbox;			/* Bounding box for an element */
 	    var font_ht;		/* Character height */
 	    var textHeight;		/* Total display height */
 	    var lbl, tic;
 
-	    /*
-	       If this is the first call, remove labels from static document.
-	       This function call will create and manage new labels.
-	    */
-
-	    if ( y_labels.length === 0 ) {
-		while ( y_axis.lastChild ) {
-		    y_axis.removeChild(y_axis.lastChild);
-		}
-	    }
-
+	    width = Number(y_axis.getAttribute("width"));
+	    x_svg = y_axis_left + width;
+	    plot_btm = plot_top + Number(plot.getAttribute("height"));
 	    for (l = 0, textHeight = 0.0; l < coords.length; l++) {
 		if ( !y_labels[l] ) {
 		    lbl = document.createElementNS(svgNs, "text");
@@ -273,28 +270,23 @@ window.addEventListener("load", function (evt) {
 		    y_labels[l].tic = tic;
 		}
 		y_svg = cart_y_to_svg(coords[l]);
-		y_labels[l].lbl.setAttribute("x", y_axis_rght - tick_len);
-		y_labels[l].lbl.setAttribute("y", y_svg);
-		y_labels[l].lbl.textContent = to_prx(coords[l], y_prx);
-		y_labels[l].tic.setAttribute("x1", y_axis_rght - tick_len);
-		y_labels[l].tic.setAttribute("x2", y_axis_rght);
-		y_labels[l].tic.setAttribute("y1", y_svg);
-		y_labels[l].tic.setAttribute("y2", y_svg);
-		bbox = y_labels[l].lbl.getBBox();
-		textHeight += bbox.height;
+		if ( plot_top <= y_svg && y_svg <= plot_btm ) {
+		    y_labels[l].lbl.setAttribute("x", x_svg - 1.5 * tick_len);
+		    y_labels[l].lbl.setAttribute("y", y_svg);
+		    y_labels[l].lbl.textContent = to_prx(coords[l], y_prx);
+		    y_labels[l].tic.setAttribute("x1", x_svg - tick_len);
+		    y_labels[l].tic.setAttribute("x2", x_svg);
+		    y_labels[l].tic.setAttribute("y1", y_svg);
+		    y_labels[l].tic.setAttribute("y2", y_svg);
+		    bbox = y_labels[l].lbl.getBBox();
+		    textHeight += bbox.height;
+		} else {
+		    hide_label(y_labels[l]);
+		}
 	    }
-
-	    /* Keep extra label elements, but hide them */
 	    for ( ; l < y_labels.length; l++) {
-		y_labels[l].lbl.setAttribute("x", -80.0);
-		y_labels[l].lbl.setAttribute("y", -80.0);
-		y_labels[l].lbl.textContent = "";
-		y_labels[l].tic.setAttribute("x1", -80.0);
-		y_labels[l].tic.setAttribute("x2", -90.0);
-		y_labels[l].tic.setAttribute("y1", -80.0);
-		y_labels[l].tic.setAttribute("y2", -90.0);
+		hide_label(y_labels[l]);
 	    }
-
 	    return textHeight;
 	}
 
@@ -505,6 +497,19 @@ window.addEventListener("load", function (evt) {
 
 	plot.addEventListener("mousedown", start_plot_drag, false);
 	plot.addEventListener("mousemove", update_cursor_loc, false);
+
+	/*
+	   Redraw the labels with javascript. This prevents sudden changes from
+	   rendering with the awk script.
+	 */
+
+	while ( x_axis.lastChild ) {
+	    x_axis.removeChild(x_axis.lastChild);
+	}
+	while ( y_axis.lastChild ) {
+	    y_axis.removeChild(y_axis.lastChild);
+	}
+	update_axes();
 
 }, false);			/* Done defining load callback */
 
