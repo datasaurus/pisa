@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.31 $ $Date: 2014/03/27 01:44:26 $
+   .	$Revision: 1.32 $ $Date: 2014/03/27 18:52:31 $
  */
 
 /*
@@ -316,7 +316,7 @@ window.addEventListener("load", function (evt) {
 	       smaller dx.
 	     */
 
-	    var dx, have_labels, l0, l1;
+	    var dx, have_labels, l0, l1, t;
 
 	    if ( lo === hi ) {
 		apply_coords([l0]);
