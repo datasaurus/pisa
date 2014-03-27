@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.29 $ $Date: 2014/03/25 14:59:27 $
+   .	$Revision: 1.30 $ $Date: 2014/03/26 22:58:45 $
  */
 
 /*
@@ -74,22 +74,22 @@ window.addEventListener("load", function (evt) {
 	   drag.
 	 */
 
-	var plot_x0, plot_y0;		/* SVG coordinates of plot element */
-	var x_axis_x0, x_axis_y0;	/* SVG coordinates of x axis element */
-	var y_axis_x0, y_axis_y0;	/* SVG coordinates of y axis element */
-	var y_axis_x1;			/* Right side of y axis element */
+	var plot_left, plot_top;	/* SVG coordinates of plot element */
+	var x_axis_left, x_axis_top;	/* SVG coordinates of x axis element */
+	var y_axis_left, y_axis_top;	/* SVG coordinates of y axis element */
+	var y_axis_rght;		/* Right side of y axis element */
 	var drag_x0, drag_y0;		/* SVG coordinates of mouse at start
 					   of drag */
 	var prev_evt_x, prev_evt_y;	/* SVG coordinates of mouse at previous
 					   mouse event during drag */
 
-	plot_x0 = Number(plot.getAttribute("x"));
-	plot_y0 = Number(plot.getAttribute("y"));
-	x_axis_x0 = Number(x_axis.getAttribute("x"));
-	x_axis_y0 = Number(x_axis.getAttribute("y"));
-	y_axis_x0 = Number(y_axis.getAttribute("x"));
-	y_axis_x1 = y_axis_x0 + Number(y_axis.getAttribute("width"));
-	y_axis_y0 = Number(y_axis.getAttribute("y"));
+	plot_left = Number(plot.getAttribute("x"));
+	plot_top = Number(plot.getAttribute("y"));
+	x_axis_left = Number(x_axis.getAttribute("x"));
+	x_axis_top = Number(x_axis.getAttribute("y"));
+	y_axis_left = Number(y_axis.getAttribute("x"));
+	y_axis_rght = y_axis_left + Number(y_axis.getAttribute("width"));
+	y_axis_top = Number(y_axis.getAttribute("y"));
 
 	/* Local function definitions */
 
@@ -208,12 +208,12 @@ window.addEventListener("load", function (evt) {
 		}
 		x_svg = cart_x_to_svg(coords[l]);
 		x_labels[l].lbl.setAttribute("x", x_svg);
-		x_labels[l].lbl.setAttribute("y", x_axis_y0 + tick_len);
+		x_labels[l].lbl.setAttribute("y", x_axis_top + tick_len);
 		x_labels[l].lbl.textContent = to_prx(coords[l], x_prx);
 		x_labels[l].tic.setAttribute("x1", x_svg);
 		x_labels[l].tic.setAttribute("x2", x_svg);
-		x_labels[l].tic.setAttribute("y1", x_axis_y0);
-		x_labels[l].tic.setAttribute("y2", x_axis_y0 + tick_len);
+		x_labels[l].tic.setAttribute("y1", x_axis_top);
+		x_labels[l].tic.setAttribute("y2", x_axis_top + tick_len);
 		textLength += x_labels[l].lbl.getComputedTextLength();
 	    }
 
@@ -273,11 +273,11 @@ window.addEventListener("load", function (evt) {
 		    y_labels[l].tic = tic;
 		}
 		y_svg = cart_y_to_svg(coords[l]);
-		y_labels[l].lbl.setAttribute("x", y_axis_x1 - tick_len);
+		y_labels[l].lbl.setAttribute("x", y_axis_rght - tick_len);
 		y_labels[l].lbl.setAttribute("y", y_svg);
 		y_labels[l].lbl.textContent = to_prx(coords[l], y_prx);
-		y_labels[l].tic.setAttribute("x1", y_axis_x1 - tick_len);
-		y_labels[l].tic.setAttribute("x2", y_axis_x1);
+		y_labels[l].tic.setAttribute("x1", y_axis_rght - tick_len);
+		y_labels[l].tic.setAttribute("x2", y_axis_rght);
 		y_labels[l].tic.setAttribute("y1", y_svg);
 		y_labels[l].tic.setAttribute("y2", y_svg);
 		bbox = y_labels[l].lbl.getBBox();
@@ -345,8 +345,8 @@ window.addEventListener("load", function (evt) {
 	    cart_top = cart_btm + cart_ht;
 
 	    /* Restore x axis position and update viewBox */
-	    x_axis.setAttribute("x", x_axis_x0);
-	    viewBox = x_axis_x0;
+	    x_axis.setAttribute("x", x_axis_left);
+	    viewBox = x_axis_left;
 	    viewBox += " " + x_axis.viewBox.baseVal.y;
 	    viewBox += " " + x_axis.viewBox.baseVal.width;
 	    viewBox += " " + x_axis.viewBox.baseVal.height;
@@ -402,9 +402,9 @@ window.addEventListener("load", function (evt) {
 	    }
 
 	    /* Restore y axis position and update viewBox */
-	    y_axis.setAttribute("y", y_axis_y0);
+	    y_axis.setAttribute("y", y_axis_top);
 	    viewBox = y_axis.viewBox.baseVal.x;
-	    viewBox += " " + y_axis_y0;
+	    viewBox += " " + y_axis_top;
 	    viewBox += " " + y_axis.viewBox.baseVal.width;
 	    viewBox += " " + y_axis.viewBox.baseVal.height;
 	    y_axis.setAttribute("viewBox", viewBox);
@@ -488,7 +488,7 @@ window.addEventListener("load", function (evt) {
 	/*
 	   end_plot_drag is called at mouse up. It determines how much the
 	   viewBox has changed since the start of the drag. It restores dragged
-	   elements to their initial coordinates, plot_x0, plot_y0, but with a
+	   elements to their initial coordinates, plot_left, plot_top, but with a
 	   new shifted viewBox.
 	 */
 
@@ -520,8 +520,8 @@ window.addEventListener("load", function (evt) {
 	       dragged to because of the adjments to the viewBox.
 	     */
 
-	    plot.setAttribute("x", plot_x0);
-	    plot.setAttribute("y", plot_y0);
+	    plot.setAttribute("x", plot_left);
+	    plot.setAttribute("y", plot_top);
 	    var background = document.getElementById("plotBackground");
 	    background.setAttribute("x", vb_x0);
 	    background.setAttribute("y", vb_y0);
