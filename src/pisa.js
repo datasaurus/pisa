@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.30 $ $Date: 2014/03/26 22:58:45 $
+   .	$Revision: 1.31 $ $Date: 2014/03/27 01:44:26 $
  */
 
 /*
@@ -298,51 +298,85 @@ window.addEventListener("load", function (evt) {
 	    return textHeight;
 	}
 
-	/* Find smallest power of 10 larger than x */
-	function up10(x)
+	/*
+	   Produce a set of labels for coordinates ranging from lo to hi.
+	   apply_coords must be a function that creates the labels in the
+	   document and returns the amount of space they use. max_sz must
+	   specify the maximum amount of space they are allowed to use.
+	 */
+
+	function mk_labels(lo, hi, apply_coords, max_sz)
 	{
-	    return Math.pow(10.0, Math.ceil(Math.log(x) / Math.LN10));
+	    /*
+	       Initialize dx with smallest power of 10 larger in magnitude
+	       than hi - lo. Decrease magnitude of dx. Place
+	       label set for the smaller dx into l1. If printing the labels
+	       in l1 would overflow the axis with characters, restore and
+	       use l0. Otherwise, replace l0 with l1 and retry with a
+	       smaller dx.
+	     */
+
+	    var dx, have_labels, l0, l1;
+
+	    if ( lo === hi ) {
+		apply_coords([l0]);
+		return;
+	    }
+	    if ( lo > hi ) {
+		t = hi;
+		hi = lo;
+		lo = t;
+	    }
+	    dx = Math.pow(10.0, Math.ceil(Math.log(hi - lo) / Math.LN10));
+	    for (have_labels = false; !have_labels; ) {
+		l1 = coord_list(lo, hi, dx);
+		if ( apply_coords(l1) > max_sz ) {
+		    apply_coords(l0);
+		    have_labels = true;
+		} else {
+		    l0 = l1;
+		}
+		dx *= 0.5;			/* If dx was 10, now it is 5 */
+		l1 = coord_list(lo, hi, dx);
+		if ( apply_coords(l1) > max_sz ) {
+		    apply_coords(l0);
+		    have_labels = true;
+		} else {
+		    l0 = l1;
+		}
+		dx *= 0.4;			/* If dx was 5, now it is 2 */
+		l1 = coord_list(lo, hi, dx);
+		if ( apply_coords(l1) > max_sz ) {
+		    apply_coords(l0);
+		    have_labels = true;
+		} else {
+		    l0 = l1;
+		}
+		dx *= 0.5;			/* If dx was 2, now it is 1 */
+	    }
 	}
 
 	/* Label the plot axes. */
 	function update_axes ()
 	{
 	    var viewBox;		/* axis viewBox */
-	    var x, y;			/* Coordinate or axis location */
-	    var dx, dy;			/* Proposed label spacing */
-	    var l0, l1;			/* Lists of coordinates */
-	    var max_sz;			/* Maximum space for labels */
-	    var have_labels;		/* If true, have found a set of labels
-					   for an axis */
-	    var svg_left;		/* SVG coordinate of top edge of plot */
 	    var svg_width;		/* Plot width, SVG coordinates */
-	    var svg_top;		/* SVG coordinate of top edge of plot */
-	    var svg_btm;		/* SVG coordinate of bottom edge of
-					   plot */
 	    var svg_height;		/* Plot height, SVG coordinates */
 	    var cart_left;		/* Cartesian x coordinate of left edge
 					   of plot */
 	    var cart_right;		/* Cartesian x coordinate of right side
 					   of plot */
-	    var cart_width;		/* cart_right - cart_left */
 	    var cart_top;		/* Cartesian y coordinate at top edge
 					   of plot */
 	    var cart_btm;		/* Cartesian y coordinate at bottom
 					   edge of plot */
-	    var cart_ht;		/* cart_top - cart_btm */
-	    var t;			/* Temporary */
 
-	    svg_left = plot.x.baseVal.value;
 	    svg_width = plot.width.baseVal.value;
-	    svg_top = plot.y.baseVal.value;
 	    svg_height = plot.height.baseVal.value;
-	    svg_btm = svg_top + svg_height;
 	    cart_left = plot.viewBox.baseVal.x;
-	    cart_width = plot.viewBox.baseVal.width;
-	    cart_right = cart_left + cart_width;
+	    cart_right = cart_left + plot.viewBox.baseVal.width;
 	    cart_btm = plot.viewBox.baseVal.y;
-	    cart_ht = plot.viewBox.baseVal.height;
-	    cart_top = cart_btm + cart_ht;
+	    cart_top = cart_btm + plot.viewBox.baseVal.height;
 
 	    /* Restore x axis position and update viewBox */
 	    x_axis.setAttribute("x", x_axis_left);
@@ -353,53 +387,7 @@ window.addEventListener("load", function (evt) {
 	    x_axis.setAttribute("viewBox", viewBox);
 
 	    /* Create new labels for x axis */
-	    max_sz = svg_width / 4;
-	    if ( cart_left > cart_right ) {
-		t = cart_right;
-		cart_right = cart_left;
-		cart_left = t;
-	    }
-	    l0 = [cart_left];
-	    if ( cart_left === cart_right ) {
-		apply_x_coords(l0);
-	    } else {
-		/*
-		   Initialize dx with smallest power of 10 larger in magnitude
-		   than cart_right - cart_left. Decrease magnitude of dx. Place
-		   label set for the smaller dx into l1. If printing the labels
-		   in l1 would overflow the axis with characters, restore and
-		   use l0. Otherwise, replace l0 with l1 and retry with a
-		   smaller dx.
-		 */
-
-		dx = up10(cart_right - cart_left);
-		for (have_labels = false; !have_labels; ) {
-		    l1 = coord_list(cart_left, cart_right, dx);
-		    if ( apply_x_coords(l1) > max_sz ) {
-			apply_x_coords(l0);
-			have_labels = true;
-		    } else {
-			l0 = l1;
-		    }
-		    dx *= 0.5;			/* If dx was 10, now it is 5 */
-		    l1 = coord_list(cart_left, cart_right, dx);
-		    if ( apply_x_coords(l1) > max_sz ) {
-			apply_x_coords(l0);
-			have_labels = true;
-		    } else {
-			l0 = l1;
-		    }
-		    dx *= 0.4;			/* If dx was 5, now it is 2 */
-		    l1 = coord_list(cart_left, cart_right, dx);
-		    if ( apply_x_coords(l1) > max_sz ) {
-			apply_x_coords(l0);
-			have_labels = true;
-		    } else {
-			l0 = l1;
-		    }
-		    dx *= 0.5;			/* If dx was 2, now it is 1 */
-		}
-	    }
+	    mk_labels(cart_left, cart_right, apply_x_coords, svg_width / 4);
 
 	    /* Restore y axis position and update viewBox */
 	    y_axis.setAttribute("y", y_axis_top);
@@ -410,53 +398,7 @@ window.addEventListener("load", function (evt) {
 	    y_axis.setAttribute("viewBox", viewBox);
 
 	    /* Create new labels for y axis */
-	    max_sz = svg_height / 4;
-	    if ( cart_btm > cart_top ) {
-		t = cart_top;
-		cart_top = cart_btm;
-		cart_btm = t;
-	    }
-	    l0 = [cart_btm];
-	    if ( cart_btm === cart_top ) {
-		apply_y_coords(l0);
-	    } else {
-		/*
-		   Initialize dy with smallest power of 10 larger in magnitude
-		   than cart_top - cart_btm. Decrease magnitude of dy. Place
-		   label set for the smaller dy into l1. If printing the labels
-		   in l1 would overflow the axis with characters, restore and
-		   use l0. Otherwise, replace l0 with l1 and retry with a
-		   smaller dy.
-		 */
-
-		dy = up10(cart_top - cart_btm);
-		for (have_labels = false; !have_labels; ) {
-		    l1 = coord_list(cart_btm, cart_top, dy);
-		    if ( apply_y_coords(l1) > max_sz ) {
-			apply_y_coords(l0);
-			have_labels = true;
-		    } else {
-			l0 = l1;
-		    }
-		    dy *= 0.5;			/* If dy was 10, now it is 5 */
-		    l1 = coord_list(cart_btm, cart_top, dy);
-		    if ( apply_y_coords(l1) > max_sz ) {
-			apply_y_coords(l0);
-			have_labels = true;
-		    } else {
-			l0 = l1;
-		    }
-		    dy *= 0.4;			/* If dy was 5, now it is 2 */
-		    l1 = coord_list(cart_btm, cart_top, dy);
-		    if ( apply_y_coords(l1) > max_sz ) {
-			apply_y_coords(l0);
-			have_labels = true;
-		    } else {
-			l0 = l1;
-		    }
-		    dy *= 0.5;			/* If dy was 2, now it is 1 */
-		}
-	    }
+	    mk_labels(cart_btm, cart_top, apply_y_coords, svg_height / 4);
 	}
 
 	/*
