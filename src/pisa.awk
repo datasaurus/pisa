@@ -31,16 +31,16 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.31 $ $Date: 2014/03/21 22:21:01 $
+# $Revision: 1.32 $ $Date: 2014/03/21 22:40:37 $
 #
 ################################################################################
 
 # Standard input must include:
 #
-#	x0 plot_coord
-#	x1 plot_coord
-#	y0 plot_coord
-#	y1 plot_coord
+#	x_left plot_coord
+#	x_rght plot_coord
+#	y_btm plot_coord
+#	y_top plot_coord
 #	doc_width pixels
 #	top pixels
 #	right pixels
@@ -57,10 +57,10 @@
 #
 # where:
 #	
-#	x0		x coordinate of left edge of plot in plot coordinates
-#	x1		x coordinate of right edge of plot in plot coordinates
-#	y0		y coordinate of bottom edge of plot in plot coordinates
-#	y1		y coordinate of top edge of plot in plot coordinates
+#	x_left		x coordinate of left edge of plot in plot coordinates
+#	x_rght		x coordinate of right edge of plot in plot coordinates
+#	y_btm		y coordinate of bottom edge of plot in plot coordinates
+#	y_top		y coordinate of top edge of plot in plot coordinates
 #	doc_width	document width in display units (pixels).
 #	doc_height	(optional) plot height, in display units (pixels).
 #	top		size of the area above the plot, in display units
@@ -83,116 +83,8 @@
 #
 ################################################################################
 
-# axis_lbl --
-#	This function determines axis label locations.
-#	x_min	(in)	start of axis.
-#	x_max	(in)	end of axis.
-#	prx	(in) 	number of significant digits in each label.
-#	n_max	(in)	number of characters allowed for all labels.
-#	orient  (in)	orientation, "h" or "v" for horizontal or vertical.
-#	labels	(out)	Label coordinates and strings are returned in labels.
-#			Each index is an x coordinate. Corresponding value is
-#			the string to print there.
-#	l0, l1, dx, t	local variables
-#
-#	Algorithm:
-#	Initialize the interval dx to a power of 10 larger than the interval
-#	from x_max - x_min, then try smaller steps until all of the labels with
-#	a space character between them fit into n_max characters. The interval
-#	will be a multiple of 10, 5, or 2 times some power of 10.
-#
-function axis_lbl(x_min, x_max, prx, n_max, orient, labels,
-	l0, l1, dx, t)
-{
-#   Put a tentative number of labels into l0.
-#   Put more labels into l1. If l1 would need more than n_max
-#   characters, return l0. Otherwise, copy l1 to l0 and try
-#   a more populated l1.
-    if ( x_min > x_max ) {
-	t = x_max;
-	x_max = x_min;
-	x_min = t;
-    } else if ( x_min == x_max ) {
-	labels["0"] = "";
-	return;
-    }
-    fmt="%."prx"g";
-    l0[x_min] = sprintf(fmt, x_min);
-    if ( length(sprintf(fmt, x_min)) > n_max ) {
-	copy_arr(labels, l0);
-	return;
-    }
-    if ( length(sprintf(fmt " " fmt, x_min, x_max)) > n_max ) {
-	copy_arr(labels, l0);
-	return;
-    }
-    l0[x_min] = sprintf(fmt, x_min);
-    l0[x_max] = sprintf(fmt, x_max);
-    dx = pow10(x_max - x_min);
-    while (1) {
-	if ( mk_lbl(x_min, x_max, dx, fmt, orient, l1) > n_max ) {
-	    copy_arr(labels, l0);
-	    return;
-	} else {
-	    copy_arr(l0, l1);
-	}
-
-	dx *= 0.5;
-	if ( mk_lbl(x_min, x_max, dx, fmt, orient, l1) > n_max ) {
-	    copy_arr(labels, l0);
-	    return;
-	} else {
-	    copy_arr(l0, l1);
-	}
-
-	dx *= 0.4;
-	if ( mk_lbl(x_min, x_max, dx, fmt, orient, l1) > n_max ) {
-	    copy_arr(labels, l0);
-	    return;
-	} else {
-	    copy_arr(l0, l1);
-	}
-
-	dx *= 0.5;
-    }
-}
-
-# Print labels from x_min to x_max with separation dx and print format fmt
-# to a string. Assign the label coordinates and label strings to the labels
-# array.  Each index in labels array will be an x coordinate. Array value will
-# be the label to print there. If orient is "h", return the length of the
-# string containing all labels. Otherwise, assume the axis is vertical and
-# return the number of labels.
-
-function mk_lbl(x_min, x_max, dx, fmt, orient, labels,
-	l, x0, n, n_lbl, lbl_str, lbl, n_tot)
-{
-    for (l in labels) {
-	delete labels[l];
-    }
-    n_lbl = ceil((x_max - x_min) / dx);
-    x0 = floor(x_min / dx) * dx;
-    x_min -= dx / 4;
-    x_max += dx / 4;
-    lbl_str = "";
-    for (n = n_tot = 0; n <= n_lbl; n++) {
-	x = x0 + n * dx;
-	if ( x >= x_min && x <= x_max ) {
-	    lbl = sprintf(fmt, x);
-	    labels[x] = lbl;
-	    if ( orient == "h" ) {
-		n_tot += length(lbl) + 1;
-	    } else {
-		n_tot += 2;
-	    }
-	}
-    }
-    return n_tot;
-}
-
 # This function returns the next power of 10 greater than or equal to the
 # magnitude of x.
-
 function pow10(x)
 {
     if (x == 0.0) {
@@ -226,47 +118,148 @@ function copy_arr(dest, src)
     }
 }
 
+# axis_lbl --
+#	This function determines axis label locations.
+#	x_left	(in)	start of axis.
+#	x_rght	(in)	end of axis.
+#	prx	(in) 	number of significant digits in each label.
+#	n_max	(in)	number of characters allowed for all labels.
+#	orient  (in)	orientation, "h" or "v" for horizontal or vertical.
+#	labels	(out)	Label coordinates and strings are returned in labels.
+#			Each index is an x coordinate. Corresponding value is
+#			the string to print there.
+#	l0, l1, dx, t	local variables
+#
+#	Algorithm:
+#	Initialize the interval dx to a power of 10 larger than the interval
+#	from x_rght - x_left, then try smaller steps until all of the labels with
+#	a space character between them fit into n_max characters. The interval
+#	will be a multiple of 10, 5, or 2 times some power of 10.
+#
+function axis_lbl(x_left, x_rght, prx, n_max, orient, labels,
+	l0, l1, dx, t)
+{
+#   Put a tentative number of labels into l0.
+#   Put more labels into l1. If l1 would need more than n_max
+#   characters, return l0. Otherwise, copy l1 to l0 and try
+#   a more populated l1.
+    fmt="%."prx"g";
+    l0[x_left] = sprintf(fmt, x_left);
+    if ( x_left == x_rght || length(sprintf(fmt, x_left)) > n_max ) {
+	copy_arr(labels, l0);
+	return;
+    }
+    l0[x_rght] = sprintf(fmt, x_rght);
+    if ( length(sprintf(fmt " " fmt, x_left, x_rght)) > n_max ) {
+	copy_arr(labels, l0);
+	return;
+    }
+    if ( x_rght > x_left ) {
+	dx = pow10(x_rght - x_left);
+    } else {
+	dx = pow10(x_left - x_rght);
+    }
+    while (1) {
+	if ( mk_lbl(x_left, x_rght, dx, fmt, orient, l1) > n_max ) {
+	    copy_arr(labels, l0);
+	    return;
+	} else {
+	    copy_arr(l0, l1);
+	}
+
+	dx *= 0.5;
+	if ( mk_lbl(x_left, x_rght, dx, fmt, orient, l1) > n_max ) {
+	    copy_arr(labels, l0);
+	    return;
+	} else {
+	    copy_arr(l0, l1);
+	}
+
+	dx *= 0.4;
+	if ( mk_lbl(x_left, x_rght, dx, fmt, orient, l1) > n_max ) {
+	    copy_arr(labels, l0);
+	    return;
+	} else {
+	    copy_arr(l0, l1);
+	}
+
+	dx *= 0.5;
+    }
+}
+
+# Print labels from x_left to x_rght with separation dx and print format fmt
+# to a string. Assign the label coordinates and label strings to the labels
+# array.  Each index in labels array will be an x coordinate. Array value will
+# be the label to print there. If orient is "h", return the length of the
+# string containing all labels. Otherwise, assume the axis is vertical and
+# return the number of labels.
+
+function mk_lbl(x_left, x_rght, dx, fmt, orient, labels, l, x0, n, n_tot)
+{
+    for (l in labels) {
+	delete labels[l];
+    }
+    x0 = floor(x_left / dx) * dx;
+    x_left -= dx / 4;
+    x_rght += dx / 4;
+    for (n = n_tot = 0; n <= ceil((x_rght - x_left) / dx); n++) {
+	x = x0 + n * dx;
+	if ( x >= x_left && x <= x_rght ) {
+	    labels[x] = sprintf(fmt, x);
+	    if ( orient == "h" ) {
+		n_tot += length(labels[x]) + 1;
+	    } else {
+		n_tot++;
+	    }
+	}
+    }
+    return n_tot;
+}
+
 # Print the document header
 function print_header()
 {
     if ( have_header ) {
 	return;
     }   
-    if ( x0 == "nan" ) {
-	printf "x0 not set\n" > err;
+    if ( x_left == "nan" ) {
+	printf "x_left not set\n" > err;
 	exit 1;
     }
-    if ( x1 == "nan" ) {
-	printf "x1 not set\n" > err;
+    if ( x_rght == "nan" ) {
+	printf "x_rght not set\n" > err;
 	exit 1;
     }
-    x_width = x1 - x0;
-    if ( x_width <= 0 ) {
-	printf "plot width must be positive\n" > err;
+    x_width = x_rght - x_left;
+    if ( y_btm == "nan" ) {
+	printf "y_btm not set\n" > err;
 	exit 1;
     }
-    if ( y0 == "nan" ) {
-	printf "y0 not set\n" > err;
+    if ( y_top == "nan" ) {
+	printf "y_top not set\n" > err;
 	exit 1;
     }
-    if ( y1 == "nan" ) {
-	printf "y1 not set\n" > err;
-	exit 1;
-    }
-    y_height = y1 - y0;
-    if ( y_height <= 0 ) {
-	printf "plot height must be positive\n" > err;
-	exit 1;
-    }
+    y_height = y_top - y_btm;
     plot_width = doc_width - left - right;
     if ( doc_height == "nan" ) {
 	plot_height = plot_width * y_height / x_width;
+	if ( plot_height < 0.0 ) {
+	    plot_height = -plot_height;
+	}
 	doc_height = plot_height + top + bottom;
     } else {
 	plot_height = doc_height - top - bottom;
     }
 
-    # Initialize the SVG document
+#   Compute transform matrix for plot element
+    a = plot_width / x_width;
+    c = 0.0;
+    e = -x_left * a;
+    b = 0.0;
+    d = -plot_height / y_height;
+    f = -d * y_top;
+
+#   Initialize the SVG document
     printf "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     for (s = 0; s < num_sheets; s++) {
 	printf "<?xml-stylesheet href=\"%s\" type=\"text/css\"?>\n", sheet[s];
@@ -298,10 +291,10 @@ BEGIN {
     right = 0.0;
     bottom = 0.0;
     left = 0.0;
-    x0 = "nan";
-    x1 = "nan";
-    y0 = "nan";
-    y1 = "nan";
+    x_left = "nan";
+    x_rght = "nan";
+    y_btm = "nan";
+    y_top = "nan";
     x_width = "nan";
     y_height = "nan";
     plot_width = "nan";
@@ -368,17 +361,17 @@ BEGIN {
 	exit 1;
     }
 }
-/^ *x0 *= *[0-9.Ee-]+ *$/ {
-    x0 = $2 + 0.0;
+/^ *x_left *= *[0-9.Ee-]+ *$/ {
+    x_left = $2 + 0.0;
 }
-/^ *x1 *= *[0-9.Ee-]+ *$/ {
-    x1 = $2 + 0.0;
+/^ *x_rght *= *[0-9.Ee-]+ *$/ {
+    x_rght = $2 + 0.0;
 }
-/^ *y0 *= *[0-9.Ee-]+ *$/ {
-    y0 = $2 + 0.0;
+/^ *y_btm *= *[0-9.Ee-]+ *$/ {
+    y_btm = $2 + 0.0;
 }
-/^ *y1 *= *[0-9.Ee-]+ *$/ {
-    y1 = $2 + 0.0;
+/^ *y_top *= *[0-9.Ee-]+ *$/ {
+    y_top = $2 + 0.0;
 }
 /^ *font_sz *= *[0-9.Ee-]+ *$/ {
     font_sz = $2 + 0.0;
@@ -460,9 +453,6 @@ BEGIN {
     printf "</defs>\n";
 
 #   Create plot area.
-    printf "<!-- Flip y coordinates to make them Cartesian -->\n";
-    printf "<g transform=\"matrix(1.0 0.0 0.0 -1.0 0.0 %f)\">\n", doc_height;
-    printf "\n";
     printf "<!-- Clip path and SVG element for plot area -->\n";
     printf "<g clip-path=\"url(#PlotArea)\">\n";
     printf "  <svg\n";
@@ -470,15 +460,16 @@ BEGIN {
     printf "      x=\"%f\"\n", left;
     printf "      y=\"%f\"\n", top;
     printf "      width=\"%f\"\n", plot_width;
-    printf "      height=\"%f\"\n", plot_height;
-    printf "      viewBox=\"%f %f %f %f\"\n", x0, y0, x_width, y_height;
-    printf "      preserveAspectRatio=\"none\">\n";
+    printf "      height=\"%f\">\n", plot_height;
+    printf "\n";
+    printf "<!-- Set user space for Cartesian coordinates -->\n";
+    printf "<g transform=\"matrix(%f %f %f %f %f %f)\">\n", a, b, c, d, e, f;
     printf "\n";
     printf "    <!-- Fill in plot area background -->\n";
     printf "    <rect\n";
     printf "        id=\"plotBackground\"\n";
-    printf "        x=\"%f\"\n", x0;
-    printf "        y=\"%f\"\n", y0;
+    printf "        x=\"%f\"\n", x_left;
+    printf "        y=\"%f\"\n", y_btm;
     printf "        width=\"%f\"\n", x_width;
     printf "        height=\"%f\"\n", y_height;
     printf "        fill=\"white\" />\n";
@@ -490,13 +481,14 @@ BEGIN {
 # Printing will continue, but subsequent elements will not use
 # plot coordinates.
 /end_plot/ {
-    printf "\n";
-    printf "<!-- Done defining elements in plot area -->\n\n"
-    printf "  <!-- Terminate SVG element for plot area -->\n"
-    printf "  </svg>\n";
     printf "<!-- Terminate transform to Cartesian coordinates-->\n"
     printf "</g>\n";
+    printf "\n";
+    printf "<!-- Done defining elements in plot area -->\n\n"
     printf "\n"
+    printf "  <!-- Terminate SVG element for plot area -->\n"
+    printf "  </svg>\n";
+    printf "\n";
     printf "<!-- Terminate clipping for plot area -->\n"
     printf "</g>\n";
     printf "\n";
@@ -512,7 +504,8 @@ BEGIN {
 
 #   Draw and label x axis
     px_per_m = plot_width / x_width;
-    axis_lbl(x0, x0 + x_width, x_prx, plot_width / font_sz + 1, "h", labels);
+    n_max = plot_width / font_sz / 2;
+    axis_lbl(x_left, x_left + x_width, x_prx, n_max, "h", labels);
     printf "<!-- Clip area and svg element for x axis and labels -->\n";
     printf "<g clip-path=\"url(#xAxisClip)\">\n";
     printf "  <svg\n";
@@ -521,10 +514,10 @@ BEGIN {
     printf "      y=\"%f\"\n", x_axis_top;
     printf "      width=\"%f\"\n", x_axis_width;
     printf "      height=\"%f\"\n", x_axis_height;
-    printf "      viewBox=\"%f %f %f %f\">\n",
+    printf "      viewBox=\"%f %f %f %f\" >\n",
 	   x_axis_left, x_axis_top, x_axis_width, x_axis_height;
     for (x in labels) {
-	x_px = left + (x - x0) * px_per_m;
+	x_px = left + (x - x_left) * px_per_m;
 	printf "  <line\n";
 	printf "      x1=\"%f\"\n", x_px;
 	printf "      x2=\"%f\"\n", x_px;
@@ -548,8 +541,8 @@ BEGIN {
 
 #   Draw and label y axis
     px_per_m = plot_height / y_height;
-    y1 = y0 + y_height;
-    axis_lbl(y0, y1, y_prx, plot_height / font_sz + 1, "v", labels);
+    n_max = plot_height / font_sz / 2;
+    axis_lbl(y_btm, y_top, y_prx, n_max, "v", labels);
     printf "<!-- Clip area and svg element for y axis and labels -->\n";
     printf "<g\n";
     printf "    clip-path=\"url(#yAxisClip)\">\n";
@@ -562,7 +555,7 @@ BEGIN {
     printf "	viewBox=\"%f %f %f %f\">\n",
 	   y_axis_left, y_axis_top, y_axis_width, y_axis_height;
     for (y in labels) {
-	y_px = top + (y1 - y) * px_per_m;
+	y_px = top + (y_top - y) * px_per_m;
 	printf "  <line\n";
 	printf "      x1=\"%f\"\n", left - 0.5 * font_sz;
 	printf "      x2=\"%f\"\n", left;
