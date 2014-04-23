@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.32 $ $Date: 2014/03/21 22:40:37 $
+# $Revision: 1.33 $ $Date: 2014/03/31 22:57:54 $
 #
 ################################################################################
 
@@ -57,10 +57,10 @@
 #
 # where:
 #	
-#	x_left		x coordinate of left edge of plot in plot coordinates
-#	x_rght		x coordinate of right edge of plot in plot coordinates
-#	y_btm		y coordinate of bottom edge of plot in plot coordinates
-#	y_top		y coordinate of top edge of plot in plot coordinates
+#	x_left		Cartesian x coordinate of left edge of plot
+#	x_rght		Cartesian x coordinate of right edge of plot
+#	y_btm		Cartesian y coordinate of bottom edge of plot
+#	y_top		Cartesian y coordinate of top edge of plot
 #	doc_width	document width in display units (pixels).
 #	doc_height	(optional) plot height, in display units (pixels).
 #	top		size of the area above the plot, in display units
@@ -83,6 +83,105 @@
 #
 ################################################################################
 
+# Initialize parameters with bogus values or reasonable defaults
+BEGIN {
+    FS = "=";
+    title = "";
+    num_sheets = 0;
+    printing = 0;
+    have_header = 0;
+    doc_width = 800.0;
+    doc_height = "nan";
+    top = 0.0;
+    right = 0.0;
+    bottom = 0.0;
+    left = 0.0;
+    x_left = "nan";
+    x_rght = "nan";
+    y_btm = "nan";
+    y_top = "nan";
+    x_prx = "3";
+    y_prx = "3";
+    font_size = 12.0;
+    err = "/dev/stderr";
+}
+
+# Set parameters from standard input
+/^\s*title\s*=/ {
+    title = $2;
+}
+/^\s*style\s*=/ {
+    sheet[num_sheets] = $2;
+    num_sheets++;
+}
+/^\s*doc_width\s*=\s*[0-9.Ee-]+\s*$/ {
+    doc_width = $2 + 0.0;
+    if ( doc_width <= 0.0 ) {
+	printf "document width must be positive\n" > err;
+	exit 1;
+    }
+}
+/^\s*doc_height\s*=\s*[0-9.Ee-]+\s*$/ {
+    doc_height = $2 + 0.0;
+    if ( doc_height <= 0.0 ) {
+	printf "document height must be positive\n" > err;
+	exit 1;
+    }
+}
+/^\s*top\s*=\s*[0-9.Ee-]+\s*$/ {
+    top = $2 + 0.0;
+    if ( top < 0.0 ) {
+	printf "top margin cannot be negative" > err;
+	exit 1;
+    }
+}
+/^\s*right\s*=\s*[0-9.Ee-]+\s*$/ {
+    right = $2 + 0.0;
+    if ( right < 0.0 ) {
+	printf "right margin cannot be negative" > err;
+	exit 1;
+    }
+}
+/^\s*bottom\s*=\s*[0-9.Ee-]+\s*$/ {
+    bottom = $2 + 0.0;
+    if ( bottom < 0.0 ) {
+	printf "bottom margin cannot be negative" > err;
+	exit 1;
+    }
+}
+/^\s*left\s*=\s*[0-9.Ee-]+\s*$/ {
+    left = $2 + 0.0;
+    if ( left < 0.0 ) {
+	printf "left margin cannot be negative" > err;
+	exit 1;
+    }
+}
+/^\s*x_left\s*=\s*[0-9.Ee-]+\s*$/ {
+    x_left = $2 + 0.0;
+}
+/^\s*x_rght\s*=\s*[0-9.Ee-]+\s*$/ {
+    x_rght = $2 + 0.0;
+}
+/^\s*y_btm\s*=\s*[0-9.Ee-]+\s*$/ {
+    y_btm = $2 + 0.0;
+}
+/^\s*y_top\s*=\s*[0-9.Ee-]+\s*$/ {
+    y_top = $2 + 0.0;
+}
+/^\s*font_sz\s*=\s*[0-9.Ee-]+\s*$/ {
+    font_sz = $2 + 0.0;
+    if ( font_sz <= 0.0 ) {
+	printf "font size must be positive\n" > err;
+	exit 1;
+    }
+}
+/^\s*x_prx\s*=\s*[0-9.Ee-]+\s*$/ {
+    x_prx = $2;
+}
+/^\s*y_prx\s*=\s*[0-9.Ee-]+\s*$/ {
+    y_prx = $2;
+}
+
 # This function returns the next power of 10 greater than or equal to the
 # magnitude of x.
 function pow10(x)
@@ -98,15 +197,6 @@ function pow10(x)
     }
 }
 
-# Functions for floor and ceiling
-function floor(x)
-{
-    return (x > 0) ? int(x) : int(x) - 1;
-}
-function ceil(x) {
-    return (x > 0) ? int(x) + 1 : int(x);
-}
-
 # Copy src array to dest
 function copy_arr(dest, src)
 {
@@ -120,8 +210,8 @@ function copy_arr(dest, src)
 
 # axis_lbl --
 #	This function determines axis label locations.
-#	x_left	(in)	start of axis.
-#	x_rght	(in)	end of axis.
+#	x_lo	(in)	start of axis.
+#	x_hi	(in)	end of axis.
 #	prx	(in) 	number of significant digits in each label.
 #	n_max	(in)	number of characters allowed for all labels.
 #	orient  (in)	orientation, "h" or "v" for horizontal or vertical.
@@ -130,81 +220,88 @@ function copy_arr(dest, src)
 #			the string to print there.
 #	l0, l1, dx, t	local variables
 #
-#	Algorithm:
-#	Initialize the interval dx to a power of 10 larger than the interval
-#	from x_rght - x_left, then try smaller steps until all of the labels with
-#	a space character between them fit into n_max characters. The interval
-#	will be a multiple of 10, 5, or 2 times some power of 10.
-#
-function axis_lbl(x_left, x_rght, prx, n_max, orient, labels,
+function axis_lbl(x_lo, x_hi, prx, n_max, orient, labels,
 	l0, l1, dx, t)
 {
+    if ( x_hi < x_lo ) {
+	t = x_hi;
+	x_hi = x_lo;
+	x_lo = t;
+    }
+
 #   Put a tentative number of labels into l0.
 #   Put more labels into l1. If l1 would need more than n_max
 #   characters, return l0. Otherwise, copy l1 to l0 and try
 #   a more populated l1.
     fmt="%."prx"g";
-    l0[x_left] = sprintf(fmt, x_left);
-    if ( x_left == x_rght || length(sprintf(fmt, x_left)) > n_max ) {
+    l0[x_lo] = sprintf(fmt, x_lo);
+    if ( x_lo == x_hi || length(sprintf(fmt, x_lo)) > n_max ) {
 	copy_arr(labels, l0);
 	return;
     }
-    l0[x_rght] = sprintf(fmt, x_rght);
-    if ( length(sprintf(fmt " " fmt, x_left, x_rght)) > n_max ) {
+    l0[x_hi] = sprintf(fmt, x_hi);
+    if ( length(sprintf(fmt " " fmt, x_lo, x_hi)) > n_max ) {
 	copy_arr(labels, l0);
 	return;
     }
-    if ( x_rght > x_left ) {
-	dx = pow10(x_rght - x_left);
-    } else {
-	dx = pow10(x_left - x_rght);
-    }
+
+#   Initialize the interval dx to a power of 10 larger than the interval
+#   from x_hi - x_lo, then try smaller steps until all of the labels with
+#   a space character between them fit into n_max characters. The interval
+#   will be a multiple of 10, 5, or 2 times some power of 10.
+    dx = pow10(x_hi - x_lo);
     while (1) {
-	if ( mk_lbl(x_left, x_rght, dx, fmt, orient, l1) > n_max ) {
+	if ( mk_lbl(x_lo, x_hi, dx, fmt, orient, l1) > n_max ) {
 	    copy_arr(labels, l0);
 	    return;
 	} else {
 	    copy_arr(l0, l1);
 	}
-
 	dx *= 0.5;
-	if ( mk_lbl(x_left, x_rght, dx, fmt, orient, l1) > n_max ) {
+	if ( mk_lbl(x_lo, x_hi, dx, fmt, orient, l1) > n_max ) {
 	    copy_arr(labels, l0);
 	    return;
 	} else {
 	    copy_arr(l0, l1);
 	}
-
 	dx *= 0.4;
-	if ( mk_lbl(x_left, x_rght, dx, fmt, orient, l1) > n_max ) {
+	if ( mk_lbl(x_lo, x_hi, dx, fmt, orient, l1) > n_max ) {
 	    copy_arr(labels, l0);
 	    return;
 	} else {
 	    copy_arr(l0, l1);
 	}
-
 	dx *= 0.5;
     }
 }
 
-# Print labels from x_left to x_rght with separation dx and print format fmt
+# Functions for floor and ceiling
+function floor(x)
+{
+    return (x > 0) ? int(x) : int(x) - 1;
+}
+function ceil(x) {
+    return (x > 0) ? int(x) + 1 : int(x);
+}
+
+# Print labels from x_lo to x_hi with increment dx and print format fmt
 # to a string. Assign the label coordinates and label strings to the labels
 # array.  Each index in labels array will be an x coordinate. Array value will
 # be the label to print there. If orient is "h", return the length of the
 # string containing all labels. Otherwise, assume the axis is vertical and
 # return the number of labels.
 
-function mk_lbl(x_left, x_rght, dx, fmt, orient, labels, l, x0, n, n_tot)
+function mk_lbl(x_lo, x_hi, dx, fmt, orient, labels, l, x0, n, n_tot)
 {
     for (l in labels) {
 	delete labels[l];
     }
-    x0 = floor(x_left / dx) * dx;
-    x_left -= dx / 4;
-    x_rght += dx / 4;
-    for (n = n_tot = 0; n <= ceil((x_rght - x_left) / dx); n++) {
+    x0 = floor(x_lo / dx) * dx;
+    x_lo -= dx / 4;
+    x_hi += dx / 4;
+    for (n = n_tot = 0; n <= ceil((x_hi - x_lo) / dx); n++) {
 	x = x0 + n * dx;
-	if ( x >= x_left && x <= x_rght ) {
+	if ( x >= x_lo && x <= x_hi ) {
 	    labels[x] = sprintf(fmt, x);
 	    if ( orient == "h" ) {
 		n_tot += length(labels[x]) + 1;
@@ -216,7 +313,13 @@ function mk_lbl(x_left, x_rght, dx, fmt, orient, labels, l, x0, n, n_tot)
     return n_tot;
 }
 
-# Print the document header
+# fabs (3)
+function fabs(x)
+{
+    return (x > 0.0) ? x : -x;
+}
+
+# Validate document and plot dimensions. Print document header.
 function print_header()
 {
     if ( have_header ) {
@@ -230,7 +333,6 @@ function print_header()
 	printf "x_rght not set\n" > err;
 	exit 1;
     }
-    x_width = x_rght - x_left;
     if ( y_btm == "nan" ) {
 	printf "y_btm not set\n" > err;
 	exit 1;
@@ -239,25 +341,34 @@ function print_header()
 	printf "y_top not set\n" > err;
 	exit 1;
     }
-    y_height = y_top - y_btm;
-    plot_width = doc_width - left - right;
-    if ( doc_height == "nan" ) {
-	plot_height = plot_width * y_height / x_width;
-	if ( plot_height < 0.0 ) {
-	    plot_height = -plot_height;
-	}
-	doc_height = plot_height + top + bottom;
-    } else {
-	plot_height = doc_height - top - bottom;
+    if ( x_rght == x_left ) {
+	printf "Left and right sides cannot have same x coordinate.\n" > err;
+	exit 1;
     }
-
-#   Compute transform matrix for plot element
-    a = plot_width / x_width;
-    c = 0.0;
-    e = -x_left * a;
-    b = 0.0;
-    d = -plot_height / y_height;
-    f = -d * y_top;
+    if ( y_top == y_btm ) {
+	printf "Top and bottom cannot have same y coordinate.\n" > err;
+	exit 1;
+    }
+    plot_w_px = doc_width - left - right;
+    if ( plot_w_px <= 0 ) {
+	printf "plot_w_px = doc_width - left_margin - right_margin" > err;
+	printf " = %f - %f - %f,", doc_width, left_margin, right_margin > err;
+	printf " must be positive.\n" > err;
+	exit 1;
+    }
+    if ( doc_height == "nan" ) {
+	plot_h_px = plot_w_px * fabs((y_top - y_btm) / (x_rght - x_left));
+	doc_height = plot_h_px + top + bottom;
+    } else {
+	plot_h_px = doc_height - top - bottom;
+	if ( plot_h_px <= 0 ) {
+	    printf "plot_h_px = " > err;
+	    printf " document_height - top_margin - bottom_margin" > err;
+	    printf " = %f - %f - %f,", doc_height, top, bottom > err;
+	    printf " must be positive.\n" > err;
+	    exit 1;
+	}
+    }
 
 #   Initialize the SVG document
     printf "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
@@ -278,125 +389,16 @@ function print_header()
     have_header = 1;
 }
 
-# Initialize parameters with bogus values or reasonable defaults
-BEGIN {
-    FS = "=";
-    title = "";
-    num_sheets = 0;
-    printing = 0;
-    have_header = 0;
-    doc_width = 800.0;
-    doc_height = "nan";
-    top = 0.0;
-    right = 0.0;
-    bottom = 0.0;
-    left = 0.0;
-    x_left = "nan";
-    x_rght = "nan";
-    y_btm = "nan";
-    y_top = "nan";
-    x_width = "nan";
-    y_height = "nan";
-    plot_width = "nan";
-    plot_height = "nan";
-    x_prx = "3";
-    y_prx = "3";
-    font_size = 12.0;
-    err = "/dev/stderr";
-}
-
-# Set parameters from standard input
-/title/ {
-    title = $2;
-}
-/style/ {
-    sheet[num_sheets] = $2;
-    num_sheets++;
-}
-/^ *doc_width *= *[0-9.Ee-]+ *$/ {
-    doc_width = $2 + 0.0;
-    if ( doc_width <= 0.0 ) {
-	printf "expected positive number for plot width," > err;
-	printf " got %s\n", $2 > err;
-	exit 1;
-    }
-}
-/^ *doc_height *= *[0-9.Ee-]+ *$/ {
-    doc_height = $2 + 0.0;
-    if ( doc_height <= 0.0 ) {
-	printf "expected positive number for height," > err;
-	printf "got %s\n", $2 > err;
-	exit 1;
-    }
-}
-/^ *top *= *[0-9.Ee-]+ *$/ {
-    top = $2 + 0.0;
-    if ( top < 0.0 ) {
-	printf "expected non-negative number" > err;
-	printf " for top margin, got %s\n", $2 > err;
-	exit 1;
-    }
-}
-/^ *right *= *[0-9.Ee-]+ *$/ {
-    right = $2 + 0.0;
-    if ( right < 0.0 ) {
-	printf "expected non-negative number" > err;
-	printf " for right margin, got %s\n", $2 > err;
-	exit 1;
-    }
-}
-/^ *bottom *= *[0-9.Ee-]+ *$/ {
-    bottom = $2 + 0.0;
-    if ( bottom < 0.0 ) {
-	printf "%s: expected non-negative number" > err;
-	printf " for bottom margin, got %s\n", $2 > err;
-	exit 1;
-    }
-}
-/^ *left *= *[0-9.Ee-]+ *$/ {
-    left = $2 + 0.0;
-    if ( left < 0.0 ) {
-	printf "%s: expected non-negative number" > err;
-	printf " for left margin, got %s\n", $2 > err;
-	exit 1;
-    }
-}
-/^ *x_left *= *[0-9.Ee-]+ *$/ {
-    x_left = $2 + 0.0;
-}
-/^ *x_rght *= *[0-9.Ee-]+ *$/ {
-    x_rght = $2 + 0.0;
-}
-/^ *y_btm *= *[0-9.Ee-]+ *$/ {
-    y_btm = $2 + 0.0;
-}
-/^ *y_top *= *[0-9.Ee-]+ *$/ {
-    y_top = $2 + 0.0;
-}
-/^ *font_sz *= *[0-9.Ee-]+ *$/ {
-    font_sz = $2 + 0.0;
-    if ( font_sz < 0.0 ) {
-	printf "%s: expected non-negative number" > err;
-	printf " for font_sz margin, got %s\n", $2 > err;
-	exit 1;
-    }
-}
-/^ *x_prx *= *[0-9.Ee-]+ *$/ {
-    x_prx = $2;
-}
-/^ *y_prx *= *[0-9.Ee-]+ *$/ {
-    y_prx = $2;
-}
-
+# Start printing document. Print header.
 # Print SVG elements that should precede, or go under, plot.
-/start_doc/ {
+/^\s*start_doc\s*$/ {
     print_header();
     $0 = "";
     printing = 1;
 }
 
-# Validate parameters and start plotting.
-/start_plot/ {
+# Print header if necessary. Start printing plot.
+/^\s*start_plot\s*$/ {
     print_header();
     $0 = "";
     printing = 1;
@@ -409,8 +411,8 @@ BEGIN {
     printf "       document coordinates. -->\n";
     printf "  <rect\n";
     printf "      id=\"PlotRect\"\n";
-    printf "      width=\"%f\"\n", plot_width;
-    printf "      height=\"%f\" />\n", plot_height;
+    printf "      width=\"%f\"\n", plot_w_px;
+    printf "      height=\"%f\" />\n", plot_h_px;
     printf "</defs>\n";
 
 #   Define plot area clip path
@@ -425,8 +427,8 @@ BEGIN {
 
 #   X axis geometry and clip path.
     x_axis_left = left - 4.0 * font_sz;
-    x_axis_top = top + plot_height;
-    x_axis_width = plot_width + 8.0 * font_sz;
+    x_axis_top = top + plot_h_px;
+    x_axis_width = plot_w_px + 8.0 * font_sz;
     x_axis_height = 3 * font_sz;
     printf "  <!-- Clip path for x axis labels -->\n";
     printf "  <clipPath id=\"xAxisClip\">\n";
@@ -441,7 +443,7 @@ BEGIN {
     y_axis_left = left - 9.0 * font_sz;
     y_axis_top = top - font_sz;
     y_axis_width = 9.0 * font_sz;
-    y_axis_height = plot_height + 3.0 * font_sz;
+    y_axis_height = plot_h_px + 3.0 * font_sz;
     printf "  <!-- Clip path for y axis labels -->\n";
     printf "  <clipPath id=\"yAxisClip\">\n";
     printf "    <rect\n";
@@ -452,6 +454,17 @@ BEGIN {
     printf "  </clipPath>\n";
     printf "</defs>\n";
 
+#   Compute transform matrix for plot area
+#   .    X_svg = a * x + e
+#   .    Y_svg = d * y + f
+#   Ref: http://www.w3.org/TR/SVG11/coords.html#TransformMatrixDefined
+    a = plot_w_px / (x_rght - x_left);
+    c = 0.0;
+    e = -plot_w_px * x_left / (x_rght - x_left);
+    b = 0.0;
+    d = -plot_h_px / (y_top - y_btm);
+    f = plot_h_px * y_top / (y_top - y_btm);
+
 #   Create plot area.
     printf "<!-- Clip path and SVG element for plot area -->\n";
     printf "<g clip-path=\"url(#PlotArea)\">\n";
@@ -459,19 +472,20 @@ BEGIN {
     printf "      id=\"plot\"\n";
     printf "      x=\"%f\"\n", left;
     printf "      y=\"%f\"\n", top;
-    printf "      width=\"%f\"\n", plot_width;
-    printf "      height=\"%f\">\n", plot_height;
+    printf "      width=\"%f\"\n", plot_w_px;
+    printf "      height=\"%f\">\n", plot_h_px;
     printf "\n";
     printf "<!-- Set user space for Cartesian coordinates -->\n";
-    printf "<g transform=\"matrix(%f %f %f %f %f %f)\">\n", a, b, c, d, e, f;
+    printf "<g id=\"cartG\" transform=\"matrix(%f %f %f %f %f %f)\">\n", \
+	a, b, c, d, e, f;
     printf "\n";
     printf "    <!-- Fill in plot area background -->\n";
     printf "    <rect\n";
     printf "        id=\"plotBackground\"\n";
     printf "        x=\"%f\"\n", x_left;
-    printf "        y=\"%f\"\n", y_btm;
-    printf "        width=\"%f\"\n", x_width;
-    printf "        height=\"%f\"\n", y_height;
+    printf "        y=\"%f\"\n", y_top;
+    printf "        width=\"%f\"\n", fabs(x_rght - x_left);
+    printf "        height=\"%f\"\n", fabs(y_top - y_btm);
     printf "        fill=\"white\" />\n";
     printf "\n"
     printf "<!-- Define elements in plot area -->\n";
@@ -480,7 +494,7 @@ BEGIN {
 # When done plotting, terminate plot area. Draw axes and labels.
 # Printing will continue, but subsequent elements will not use
 # plot coordinates.
-/end_plot/ {
+/^\s*end_plot\s*$/ {
     printf "<!-- Terminate transform to Cartesian coordinates-->\n"
     printf "</g>\n";
     printf "\n";
@@ -503,9 +517,9 @@ BEGIN {
     printf "\n";
 
 #   Draw and label x axis
-    px_per_m = plot_width / x_width;
-    n_max = plot_width / font_sz / 2;
-    axis_lbl(x_left, x_left + x_width, x_prx, n_max, "h", labels);
+    px_per_m = plot_w_px / fabs(x_rght - x_left);
+    n_max = plot_w_px / font_sz / 2;
+    axis_lbl(x_left, x_rght, x_prx, n_max, "h", labels);
     printf "<!-- Clip area and svg element for x axis and labels -->\n";
     printf "<g clip-path=\"url(#xAxisClip)\">\n";
     printf "  <svg\n";
@@ -521,14 +535,14 @@ BEGIN {
 	printf "  <line\n";
 	printf "      x1=\"%f\"\n", x_px;
 	printf "      x2=\"%f\"\n", x_px;
-	printf "      y1=\"%f\"\n", top + plot_height;
-	printf "      y2=\"%f\"\n", top + plot_height + 0.5 * font_sz;
+	printf "      y1=\"%f\"\n", top + plot_h_px;
+	printf "      y2=\"%f\"\n", top + plot_h_px + 0.5 * font_sz;
 	printf "      stroke=\"black\"\n"
 	printf "      stroke-width=\"1\" />\n"
 	printf "  <text\n";
 	printf "      class=\"x axis label\"\n";
 	printf "      x=\"%f\"\n", x_px;
-	printf "      y=\"%f\"\n", top + plot_height + font_sz;
+	printf "      y=\"%f\"\n", top + plot_h_px + font_sz;
 	printf "      font-size=\"%.1f\"\n", font_sz;
 	printf "      text-anchor=\"middle\"\n";
 	printf "      dominant-baseline=\"hanging\">";
@@ -540,8 +554,8 @@ BEGIN {
     printf "\n";
 
 #   Draw and label y axis
-    px_per_m = plot_height / y_height;
-    n_max = plot_height / font_sz / 2;
+    px_per_m = plot_h_px / fabs(y_top - y_btm);
+    n_max = plot_h_px / font_sz / 2;
     axis_lbl(y_btm, y_top, y_prx, n_max, "v", labels);
     printf "<!-- Clip area and svg element for y axis and labels -->\n";
     printf "<g\n";
@@ -582,7 +596,7 @@ BEGIN {
 
 }
 
-/end/ {
+/^\s*end\s*$/ {
     printing = 0;
 }
 
@@ -594,8 +608,5 @@ BEGIN {
 }
 
 END {
-    printf "<!-- Information bar -->\n";
-    printf "<text id=\"cursor_loc\" x=\"%f\" y=\"%f\">x y</text>\n",
-	   2.0 * font_sz, 2.0 * font_sz;
     printf "</svg>\n";
 }

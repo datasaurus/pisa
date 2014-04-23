@@ -28,13 +28,13 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.33 $ $Date: 2014/03/27 18:56:15 $
+   .	$Revision: 1.34 $ $Date: 2014/03/27 21:04:48 $
  */
 
 /*
-   Load callback. Plot variables and functions become members of the event
-   handler call object, which will persist in closures assigned to event
-   handlers.
+   This function adds variables and functions related to the SVG plot
+   to its call object. It sets up several event listeners, where the
+   plot variables and functions persist anonymously in closures.
  */
 
 window.addEventListener("load", function (evt) {
@@ -44,9 +44,10 @@ window.addEventListener("load", function (evt) {
 
 	/* These objects store information about the plot elements */
 	var plot = document.getElementById("plot");
+	var plotBackground = document.getElementById("plotBackground");
+	var cartG = document.getElementById("cartG");
 	var x_axis = document.getElementById("xAxis");
 	var y_axis = document.getElementById("yAxis");
-	var cursor_loc = document.getElementById("cursor_loc");
 
 	/*
 	   Axis labels:
@@ -65,70 +66,114 @@ window.addEventListener("load", function (evt) {
 	var x_prx = 3;
 	var y_prx = 3;
 
-	var svgNs="http://www.w3.org/2000/svg";
+	var svgNs = "http://www.w3.org/2000/svg";
 
 	/*
-	   start_plot_drag, plot_drag, and end_plot_drag event handlers, defined
-	   below, enable user to drag Cartesian plot and axes with the mouse.
-	   These variables store information in this scope about the initial
-	   positions of the plot elements and about the current drag.
+	   start_plot_drag, plot_drag, and end_plot_drag event handlers,
+	   defined below, enable user to drag Cartesian plot and axes with
+	   the mouse. These variables store information in this scope about
+	   the initial positions of the plot elements and about the current
+	   drag.
 	 */
 
-	var plot_left, plot_top;	/* SVG coordinates of plot element */
-	var x_axis_left, x_axis_top;	/* SVG coordinates of x axis element */
-	var y_axis_left, y_axis_top;	/* SVG coordinates of y axis element */
-	var drag_x0, drag_y0;		/* SVG coordinates of mouse at start
+	var plotSVGX, plotSVGY;		/* SVG coordinates of plot element */
+	var xAxisSVGX, xAxisSVGY;	/* SVG coordinates of x axis element */
+	var yAxisSVGX, yAxisSVGY;	/* SVG coordinates of y axis element */
+	var dragSVGX0, dragSVGY0;	/* SVG coordinates of mouse at start
 					   of drag */
-	var prev_evt_x, prev_evt_y;	/* SVG coordinates of mouse at previous
+	var prevEvtSVGX, prevEvtSVGY;	/* SVG coordinates of mouse at previous
 					   mouse event during drag */
 
-	plot_left = Number(plot.getAttribute("x"));
-	plot_top = Number(plot.getAttribute("y"));
-	x_axis_left = Number(x_axis.getAttribute("x"));
-	x_axis_top = Number(x_axis.getAttribute("y"));
-	y_axis_left = Number(y_axis.getAttribute("x"));
-	y_axis_top = Number(y_axis.getAttribute("y"));
+	plotSVGX = Number(plot.getAttribute("x"));
+	plotSVGY = Number(plot.getAttribute("y"));
+	xAxisSVGX = Number(x_axis.getAttribute("x"));
+	xAxisSVGY = Number(x_axis.getAttribute("y"));
+	yAxisSVGX = Number(y_axis.getAttribute("x"));
+	yAxisSVGY = Number(y_axis.getAttribute("y"));
 
 	/* Local function definitions */
 
-	/* Convert Cartesian y to SVG y */
-	function cart_x_to_svg(cart_x)
+	/*
+	   This function gets limits of the plot area in Cartesian coordinates.
+	   Return value is an object with the following members:
+	   .	left = x coordinate at left edge of plot area.
+	   .	rght = x coordinate at right edge of plot area.
+	   .	top = y coordinate at top edge of plot area.
+	   .	btm = y coordinate at bottom edge of plot area.
+	 */
+
+	function get_cart()
 	{
-	    var svg_left = plot.x.baseVal.value;
-	    var svg_width = plot.width.baseVal.value;
-	    var cart_left = plot.viewBox.baseVal.x;
-	    var cart_width = plot.viewBox.baseVal.width;
-	    return svg_left + (cart_x - cart_left) / cart_width * svg_width;
+	    var xForm = cartG.transform.baseVal.getItem(0).matrix;
+	    var a = xForm.a;
+	    var d = xForm.d;
+	    var e = xForm.e;
+	    var f = xForm.f;
+	    var cart = {};
+	    cart.left = -e / a;
+	    cart.rght = (plot.width.baseVal.value - e) / a;
+	    cart.top = -f / d;
+	    cart.btm = (plot.height.baseVal.value - f) / d;
+	    return cart;
+	}
+
+	/*
+	   Set limits of plot area in Cartesian coordinates from cart,
+	   which is an object with the same members as the return value
+	   from get_cart.
+	 */
+
+	function set_cart(cart)
+	{
+	    var xForm = cartG.transform.baseVal.getItem(0).matrix;
+	    var widthSVG = plot.width.baseVal.value;
+	    var htSVG = plot.height.baseVal.value;
+	    xForm.a = widthSVG / (cart.rght - cart.left);
+	    xForm.b = 0.0;
+	    xForm.c = 0.0;
+	    xForm.d = htSVG / (cart.btm - cart.top);
+	    xForm.e = widthSVG * cart.left / (cart.left - cart.rght);
+	    xForm.f = htSVG * cart.top / (cart.top - cart.btm);
+	}
+
+	/* Convert Cartesian x to SVG x */
+	function cart_x_to_svg(cartX)
+	{
+	    var xLeftSVG = plot.x.baseVal.value;
+	    var widthSVG = plot.width.baseVal.value;
+	    var cart = get_cart();
+	    var pxPerM = widthSVG / (cart.rght - cart.left);
+	    return xLeftSVG + (cartX - cart.left) * pxPerM;
 	}
 
 	/* Convert SVG x Cartesian x */
-	function svg_x_to_cart(svg_x)
+	function svg_x_to_cart(svgX)
 	{
-	    var svg_left = plot.x.baseVal.value;
-	    var svg_width = plot.width.baseVal.value;
-	    var cart_left = plot.viewBox.baseVal.x;
-	    var cart_width = plot.viewBox.baseVal.width;
-	    return cart_left + (svg_x - svg_left) * cart_width / svg_width;
+	    var xLeftSVG = plot.x.baseVal.value;
+	    var widthSVG = plot.width.baseVal.value;
+	    var cart = get_cart();
+	    var mPerPx = (cart.rght - cart.left) / widthSVG;
+	    return cart.left + (svgX - xLeftSVG) * mPerPx;
 	}
 
 	/* Convert Cartesian y to SVG y */
-	function cart_y_to_svg(cart_y)
+	function cart_y_to_svg(cartY)
 	{
-	    var svg_y_top = plot.y.baseVal.value;
-	    var svg_ht = plot.height.baseVal.value;
-	    var cart_btm = plot.viewBox.baseVal.y;
-	    var cart_ht = plot.viewBox.baseVal.height;
-	    return svg_y_top + (1 - (cart_y - cart_btm) / cart_ht) * svg_ht;
+	    var yTopSVG = plot.y.baseVal.value;
+	    var htSVG = plot.height.baseVal.value;
+	    var cart = get_cart();
+	    var pxPerM = htSVG / (cart.btm - cart.top);
+	    return yTopSVG + (cartY - cart.top) * pxPerM;
 	}
 
 	/* Convert SVG y Cartesian y */
-	function svg_y_to_cart(svg_y)
+	function svg_y_to_cart(svgY)
 	{
-	    var svg_y_top = plot.y.baseVal.value;
-	    var svg_ht = plot.height.baseVal.value;
-	    var cart_btm = plot.viewBox.baseVal.y;
-	    var cart_ht = plot.viewBox.baseVal.height;
-	    return cart_btm + (1 - (svg_y - svg_y_top) / svg_ht) * cart_ht;
+	    var yTopSVG = plot.y.baseVal.value;
+	    var htSVG = plot.height.baseVal.value;
+	    var cart = get_cart();
+	    var mPerPx = (cart.btm - cart.top) / htSVG;
+	    return cart.top + (svgY - yTopSVG) * mPerPx;
 	}
 
 	/* Print x with precision prx, removing trailing "." and 0's */
@@ -194,8 +239,8 @@ window.addEventListener("load", function (evt) {
 					   all labels */
 	    var lbl, tic;		/* New label and tic elements */
 
-	    y_svg = x_axis_top + 1.5 * tick_len;
-	    plot_right = plot_left + Number(plot.getAttribute("width"));
+	    y_svg = xAxisSVGY + 1.5 * tick_len;
+	    plot_right = plotSVGX + Number(plot.getAttribute("width"));
 	    for (l = 0, textLength = 0.0; l < coords.length; l++) {
 		if ( !x_labels[l] ) {
 		    lbl = document.createElementNS(svgNs, "text");
@@ -213,14 +258,14 @@ window.addEventListener("load", function (evt) {
 		    x_labels[l].tic = tic;
 		}
 		x_svg = cart_x_to_svg(coords[l]);
-		if ( plot_left <= x_svg && x_svg <= plot_right ) {
+		if ( plotSVGX <= x_svg && x_svg <= plot_right ) {
 		    x_labels[l].lbl.setAttribute("x", x_svg);
 		    x_labels[l].lbl.setAttribute("y", y_svg);
 		    x_labels[l].lbl.textContent = to_prx(coords[l], x_prx);
 		    x_labels[l].tic.setAttribute("x1", x_svg);
 		    x_labels[l].tic.setAttribute("x2", x_svg);
-		    x_labels[l].tic.setAttribute("y1", x_axis_top);
-		    x_labels[l].tic.setAttribute("y2", x_axis_top + tick_len);
+		    x_labels[l].tic.setAttribute("y1", xAxisSVGY);
+		    x_labels[l].tic.setAttribute("y2", xAxisSVGY + tick_len);
 		    textLength += x_labels[l].lbl.getComputedTextLength();
 		} else {
 		    hide_label(x_labels[l]);
@@ -239,7 +284,7 @@ window.addEventListener("load", function (evt) {
 
 	function apply_y_coords(coords)
 	{
-	    var x_svg;			/* SVG x coordinates of right side of
+	    var x_svg;			/* SVG x coordinates of RIGHT side of
 					   y axis element */
 	    var y_svg;			/* SVG y coordinate of a label */
 	    var width;			/* Width of y axis element */
@@ -251,8 +296,8 @@ window.addEventListener("load", function (evt) {
 	    var lbl, tic;
 
 	    width = Number(y_axis.getAttribute("width"));
-	    x_svg = y_axis_left + width;
-	    plot_btm = plot_top + Number(plot.getAttribute("height"));
+	    x_svg = yAxisSVGX + width;
+	    plot_btm = plotSVGY + Number(plot.getAttribute("height"));
 	    for (l = 0, textHeight = 0.0; l < coords.length; l++) {
 		if ( !y_labels[l] ) {
 		    lbl = document.createElementNS(svgNs, "text");
@@ -270,7 +315,7 @@ window.addEventListener("load", function (evt) {
 		    y_labels[l].tic = tic;
 		}
 		y_svg = cart_y_to_svg(coords[l]);
-		if ( plot_top <= y_svg && y_svg <= plot_btm ) {
+		if ( plotSVGY <= y_svg && y_svg <= plot_btm ) {
 		    y_labels[l].lbl.setAttribute("x", x_svg - 1.5 * tick_len);
 		    y_labels[l].lbl.setAttribute("y", y_svg);
 		    y_labels[l].lbl.textContent = to_prx(coords[l], y_prx);
@@ -352,45 +397,36 @@ window.addEventListener("load", function (evt) {
 	function update_axes ()
 	{
 	    var viewBox;		/* axis viewBox */
-	    var svg_width;		/* Plot width, SVG coordinates */
-	    var svg_height;		/* Plot height, SVG coordinates */
-	    var cart_left;		/* Cartesian x coordinate of left edge
-					   of plot */
-	    var cart_right;		/* Cartesian x coordinate of right side
-					   of plot */
-	    var cart_top;		/* Cartesian y coordinate at top edge
-					   of plot */
-	    var cart_btm;		/* Cartesian y coordinate at bottom
-					   edge of plot */
+	    var widthSVG;		/* Plot width, SVG coordinates */
+	    var htSVG;			/* Plot height, SVG coordinates */
+	    var cart;			/* Limits of plot in Cartesian
+					   coordinates */
 
-	    svg_width = plot.width.baseVal.value;
-	    svg_height = plot.height.baseVal.value;
-	    cart_left = plot.viewBox.baseVal.x;
-	    cart_right = cart_left + plot.viewBox.baseVal.width;
-	    cart_btm = plot.viewBox.baseVal.y;
-	    cart_top = cart_btm + plot.viewBox.baseVal.height;
+	    widthSVG = plot.width.baseVal.value;
+	    htSVG = plot.height.baseVal.value;
+	    cart = get_cart();
 
 	    /* Restore x axis position and update viewBox */
-	    x_axis.setAttribute("x", x_axis_left);
-	    viewBox = x_axis_left;
+	    x_axis.setAttribute("x", xAxisSVGX);
+	    viewBox = xAxisSVGX;
 	    viewBox += " " + x_axis.viewBox.baseVal.y;
 	    viewBox += " " + x_axis.viewBox.baseVal.width;
 	    viewBox += " " + x_axis.viewBox.baseVal.height;
 	    x_axis.setAttribute("viewBox", viewBox);
 
 	    /* Create new labels for x axis */
-	    mk_labels(cart_left, cart_right, apply_x_coords, svg_width / 4);
+	    mk_labels(cart.left, cart.rght, apply_x_coords, widthSVG / 4);
 
 	    /* Restore y axis position and update viewBox */
-	    y_axis.setAttribute("y", y_axis_top);
+	    y_axis.setAttribute("y", yAxisSVGY);
 	    viewBox = y_axis.viewBox.baseVal.x;
-	    viewBox += " " + y_axis_top;
+	    viewBox += " " + yAxisSVGY;
 	    viewBox += " " + y_axis.viewBox.baseVal.width;
 	    viewBox += " " + y_axis.viewBox.baseVal.height;
 	    y_axis.setAttribute("viewBox", viewBox);
 
 	    /* Create new labels for y axis */
-	    mk_labels(cart_btm, cart_top, apply_y_coords, svg_height / 4);
+	    mk_labels(cart.btm, cart.top, apply_y_coords, htSVG / 4);
 	}
 
 	/*
@@ -405,8 +441,8 @@ window.addEventListener("load", function (evt) {
 					   SVG elements */
 	    var dx, dy;			/* How much to move the elements */
 
-	    dx = evt.clientX - prev_evt_x;
-	    dy = prev_evt_y - evt.clientY;
+	    dx = evt.clientX - prevEvtSVGX;
+	    dy = evt.clientY - prevEvtSVGY;
 	    x = Number(plot.getAttribute("x"));
 	    y = Number(plot.getAttribute("y"));
 	    plot.setAttribute("x", x + dx);
@@ -414,15 +450,15 @@ window.addEventListener("load", function (evt) {
 	    x = Number(x_axis.getAttribute("x"));
 	    x_axis.setAttribute("x", x + dx);
 	    y = Number(y_axis.getAttribute("y"));
-	    y_axis.setAttribute("y", y - dy);
-	    prev_evt_x = evt.clientX;
-	    prev_evt_y = evt.clientY;
+	    y_axis.setAttribute("y", y + dy);
+	    prevEvtSVGX = evt.clientX;
+	    prevEvtSVGY = evt.clientY;
 	}
 
 	/*
 	   end_plot_drag is called at mouse up. It determines how much the
 	   viewBox has changed since the start of the drag. It restores dragged
-	   elements to their initial coordinates, plot_left, plot_top, but with a
+	   elements to their initial coordinates, plotSVGX, plotSVGY, but with a
 	   new shifted viewBox.
 	 */
 
@@ -433,20 +469,24 @@ window.addEventListener("load", function (evt) {
 	       move plot viewBox by this amount
 	     */
 
-	    var svg_width = plot.width.baseVal.value;
-	    var svg_height = plot.height.baseVal.value;
-	    var vb_width = plot.viewBox.baseVal.width;
-	    var vb_height = plot.viewBox.baseVal.height;
-	    var dx = (evt.clientX - drag_x0) * vb_width / svg_width;
-	    var dy = (drag_y0 - evt.clientY) * vb_height / svg_height;
-	    var vb_x0 = plot.viewBox.baseVal.x - dx;
-	    var vb_y0 = plot.viewBox.baseVal.y - dy;
-	    var viewBox;
-	    viewBox = vb_x0;
-	    viewBox += " " + vb_y0;
-	    viewBox += " " + vb_width;
-	    viewBox += " " + vb_height;
-	    plot.setAttribute("viewBox", viewBox);
+	    var widthSVG, htSVG;	/* SVG dimensions of plot area */
+	    var cart;			/* Cartesian dimensions of plot area */
+	    var mPerPx;			/* Convert Cartesian distance to SVG */
+	    var dx, dy;			/* Drag distance in Cartesian
+					   coordinates */
+
+	    cart = get_cart();
+	    widthSVG = plot.width.baseVal.value;
+	    mPerPx = (cart.rght - cart.left) / widthSVG;
+	    dx = (dragSVGX0 - evt.clientX) * mPerPx;
+	    cart.left += dx;
+	    cart.rght += dx;
+	    htSVG = plot.height.baseVal.value;
+	    mPerPx = (cart.btm - cart.top) / htSVG;
+	    dy = (dragSVGY0 - evt.clientY) * mPerPx;
+	    cart.btm += dy;
+	    cart.top += dy;
+	    set_cart(cart);
 
 	    /*
 	       Restore plot and background to their position at start of drag.
@@ -454,11 +494,10 @@ window.addEventListener("load", function (evt) {
 	       dragged to because of the adjments to the viewBox.
 	     */
 
-	    plot.setAttribute("x", plot_left);
-	    plot.setAttribute("y", plot_top);
-	    var background = document.getElementById("plotBackground");
-	    background.setAttribute("x", vb_x0);
-	    background.setAttribute("y", vb_y0);
+	    plot.setAttribute("x", plotSVGX);
+	    plot.setAttribute("y", plotSVGY);
+	    plotBackground.setAttribute("x", cart.left);
+	    plotBackground.setAttribute("y", cart.top);
 
 	    update_axes();
 
@@ -469,19 +508,25 @@ window.addEventListener("load", function (evt) {
 	/*
 	   start_plot_drag is called at mouse down. It records the location of
 	   the plot in its parent as members x0 and y0. It records the initial
-	   cursor location in drag_x0 and drag_y0, which remain constant
+	   cursor location in dragSVGX0 and dragSVGY0, which remain constant
 	   throughout the drag. It also records the cursor location in members
-	   prev_evt_x and prev_evt_y, which change at every mousemove during the
+	   prevEvtSVGX and prevEvtSVGY, which change at every mousemove during the
 	   drag.
 	 */
 
 	function start_plot_drag(evt)
 	{
-	    prev_evt_x = drag_x0 = evt.clientX;
-	    prev_evt_y = drag_y0 = evt.clientY;
+	    prevEvtSVGX = dragSVGX0 = evt.clientX;
+	    prevEvtSVGY = dragSVGY0 = evt.clientY;
 	    plot.addEventListener("mousemove", plot_drag, false);
 	    plot.addEventListener("mouseup", end_plot_drag, false);
 	}
+
+	var cursor_loc = document.createElementNS(svgNs, "text");
+	cursor_loc.setAttribute("x", "24");
+	cursor_loc.setAttribute("y", "24");
+	cursor_loc.textContent = "x y";
+	document.rootElement.appendChild(cursor_loc);
 
 	/*
 	   This callback displays the Cartesian coordinates of the cursor
