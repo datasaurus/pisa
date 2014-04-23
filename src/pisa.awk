@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.33 $ $Date: 2014/03/31 22:57:54 $
+# $Revision: 1.34 $ $Date: 2014/04/23 17:15:00 $
 #
 ################################################################################
 
@@ -304,7 +304,7 @@ function mk_lbl(x_lo, x_hi, dx, fmt, orient, labels, l, x0, n, n_tot)
 	if ( x >= x_lo && x <= x_hi ) {
 	    labels[x] = sprintf(fmt, x);
 	    if ( orient == "h" ) {
-		n_tot += length(labels[x]) + 1;
+		n_tot += length(labels[x]);
 	    } else {
 		n_tot++;
 	    }
@@ -482,8 +482,8 @@ function print_header()
     printf "    <!-- Fill in plot area background -->\n";
     printf "    <rect\n";
     printf "        id=\"plotBackground\"\n";
-    printf "        x=\"%f\"\n", x_left;
-    printf "        y=\"%f\"\n", y_top;
+    printf "        x=\"%f\"\n", (x_rght > x_left) ? x_left : x_rght;
+    printf "        y=\"%f\"\n", (y_top > y_btm) ? y_btm : y_top;
     printf "        width=\"%f\"\n", fabs(x_rght - x_left);
     printf "        height=\"%f\"\n", fabs(y_top - y_btm);
     printf "        fill=\"white\" />\n";
@@ -517,7 +517,7 @@ function print_header()
     printf "\n";
 
 #   Draw and label x axis
-    px_per_m = plot_w_px / fabs(x_rght - x_left);
+    px_per_m = plot_w_px / (x_rght - x_left);
     n_max = plot_w_px / font_sz / 2;
     axis_lbl(x_left, x_rght, x_prx, n_max, "h", labels);
     printf "<!-- Clip area and svg element for x axis and labels -->\n";
@@ -542,7 +542,7 @@ function print_header()
 	printf "  <text\n";
 	printf "      class=\"x axis label\"\n";
 	printf "      x=\"%f\"\n", x_px;
-	printf "      y=\"%f\"\n", top + plot_h_px + font_sz;
+	printf "      y=\"%f\"\n", top + plot_h_px + 1.5 * font_sz;
 	printf "      font-size=\"%.1f\"\n", font_sz;
 	printf "      text-anchor=\"middle\"\n";
 	printf "      dominant-baseline=\"hanging\">";
@@ -554,7 +554,7 @@ function print_header()
     printf "\n";
 
 #   Draw and label y axis
-    px_per_m = plot_h_px / fabs(y_top - y_btm);
+    px_per_m = plot_h_px / (y_top - y_btm);
     n_max = plot_h_px / font_sz / 2;
     axis_lbl(y_btm, y_top, y_prx, n_max, "v", labels);
     printf "<!-- Clip area and svg element for y axis and labels -->\n";

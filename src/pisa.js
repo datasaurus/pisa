@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.34 $ $Date: 2014/03/27 21:04:48 $
+   .	$Revision: 1.35 $ $Date: 2014/04/23 17:15:00 $
  */
 
 /*
@@ -496,8 +496,10 @@ window.addEventListener("load", function (evt) {
 
 	    plot.setAttribute("x", plotSVGX);
 	    plot.setAttribute("y", plotSVGY);
-	    plotBackground.setAttribute("x", cart.left);
-	    plotBackground.setAttribute("y", cart.top);
+	    var x_min = (cart.left < cart.rght) ? cart.left : cart.rght;
+	    plotBackground.setAttribute("x", x_min);
+	    var y_min = (cart.btm < cart.top) ? cart.btm : cart.top;
+	    plotBackground.setAttribute("y", y_min);
 
 	    update_axes();
 
@@ -522,30 +524,32 @@ window.addEventListener("load", function (evt) {
 	    plot.addEventListener("mouseup", end_plot_drag, false);
 	}
 
+	plot.addEventListener("mousedown", start_plot_drag, false);
+	plot.addEventListener("mousemove", update_cursor_loc, false);
+
+	/*
+	   Create a text element that displays the Cartesian coordinates
+	   of the cursor location.
+	 */
+
 	var cursor_loc = document.createElementNS(svgNs, "text");
 	cursor_loc.setAttribute("x", "24");
 	cursor_loc.setAttribute("y", "24");
 	cursor_loc.textContent = "x y";
 	document.rootElement.appendChild(cursor_loc);
 
-	/*
-	   This callback displays the Cartesian coordinates of the cursor
-	   location in a text element identified as "cursor_loc".
-	 */
-
 	function update_cursor_loc(evt)
 	{
 	    var x = svg_x_to_cart(evt.clientX);
 	    var y = svg_y_to_cart(evt.clientY);
-	    cursor_loc.textContent = to_prx(x, x_prx) + " " + to_prx(y, x_prx);
+	    var txt = "Cursor: " + to_prx(x, x_prx) + " " + to_prx(y, x_prx);
+	    cursor_loc.textContent = txt;
 	}
 
-	plot.addEventListener("mousedown", start_plot_drag, false);
-	plot.addEventListener("mousemove", update_cursor_loc, false);
-
 	/*
-	   Redraw the labels with javascript. This prevents sudden changes from
-	   rendering with the awk script.
+	   Redraw the labels with javascript. This prevents sudden changes
+	   in the image is the static document from the awk script noticeably
+	   differs from the Javascript rendition.
 	 */
 
 	while ( x_axis.lastChild ) {
