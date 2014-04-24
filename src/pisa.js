@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.35 $ $Date: 2014/04/23 17:15:00 $
+   .	$Revision: 1.36 $ $Date: 2014/04/23 21:09:03 $
  */
 
 /*
@@ -41,6 +41,10 @@ window.addEventListener("load", function (evt) {
 
 	"use strict";
 	/*jslint browser:true */
+
+	/* Links to external images for buttons */
+	var zoom_in_img = "zoom_in.svg";
+	var zoom_out_img = "zoom_out.svg";
 
 	/* These objects store information about the plot elements */
 	var plot = document.getElementById("plot");
@@ -67,6 +71,7 @@ window.addEventListener("load", function (evt) {
 	var y_prx = 3;
 
 	var svgNs = "http://www.w3.org/2000/svg";
+	var xlinkNs="http://www.w3.org/1999/xlink";
 
 	/*
 	   start_plot_drag, plot_drag, and end_plot_drag event handlers,
@@ -120,7 +125,8 @@ window.addEventListener("load", function (evt) {
 	/*
 	   Set limits of plot area in Cartesian coordinates from cart,
 	   which is an object with the same members as the return value
-	   from get_cart.
+	   from get_cart. This only modifies the <g ...> element that
+	   provides the transform. It does not redraw the axes.
 	 */
 
 	function set_cart(cart)
@@ -429,6 +435,26 @@ window.addEventListener("load", function (evt) {
 	    mk_labels(cart.btm, cart.top, apply_y_coords, htSVG / 4);
 	}
 
+	/* Draw the background */
+	function update_background()
+	{
+	    var cart = get_cart();
+	    if ( cart.left < cart.rght ) {
+		plotBackground.setAttribute("x", cart.left);
+		plotBackground.setAttribute("width", cart.rght - cart.left);
+	    } else {
+		plotBackground.setAttribute("x", cart.rght);
+		plotBackground.setAttribute("width", cart.left - cart.rght);
+	    }
+	    if ( cart.btm < cart.top ) {
+		plotBackground.setAttribute("y", cart.btm);
+		plotBackground.setAttribute("height", cart.top - cart.btm);
+	    } else {
+		plotBackground.setAttribute("y", cart.top);
+		plotBackground.setAttribute("height", cart.btm - cart.top);
+	    }
+	}
+
 	/*
 	   plot_drag is called at each mouse move while the plot is being
 	   dragged. It determines how much the mouse has moved since the last
@@ -496,11 +522,8 @@ window.addEventListener("load", function (evt) {
 
 	    plot.setAttribute("x", plotSVGX);
 	    plot.setAttribute("y", plotSVGY);
-	    var x_min = (cart.left < cart.rght) ? cart.left : cart.rght;
-	    plotBackground.setAttribute("x", x_min);
-	    var y_min = (cart.btm < cart.top) ? cart.btm : cart.top;
-	    plotBackground.setAttribute("y", y_min);
 
+	    update_background();
 	    update_axes();
 
 	    plot.removeEventListener("mousemove", plot_drag, false);
@@ -533,8 +556,8 @@ window.addEventListener("load", function (evt) {
 	 */
 
 	var cursor_loc = document.createElementNS(svgNs, "text");
-	cursor_loc.setAttribute("x", "24");
-	cursor_loc.setAttribute("y", "24");
+	cursor_loc.setAttribute("x", "12");
+	cursor_loc.setAttribute("y", "48");
 	cursor_loc.textContent = "x y";
 	document.rootElement.appendChild(cursor_loc);
 
@@ -545,6 +568,84 @@ window.addEventListener("load", function (evt) {
 	    var txt = "Cursor: " + to_prx(x, x_prx) + " " + to_prx(y, x_prx);
 	    cursor_loc.textContent = txt;
 	}
+
+	/* Zoom controls */
+
+	var zoom_in = document.createElementNS(svgNs, "image");
+	zoom_in.setAttribute("x", "0");
+	zoom_in.setAttribute("y", "0");
+	zoom_in.setAttribute("width", "24");
+	zoom_in.setAttribute("height", "24");
+	zoom_in.setAttributeNS(xlinkNs, "xlink:href", zoom_in_img);
+	function apply_zoom_in(evt) {
+	    var s;			/* Scale factor */
+	    var cart;
+	    var sz_2;			/* Half width or height */
+	    var elems, e;		/* List of plot elements, loop index */
+	    var sw;			/* Stroke width */
+
+	    s = 2.0 / 3.0;
+	    cart = get_cart();
+	    sz_2 = (cart.rght - cart.left) / 2;
+	    sz_2 *= s;
+	    cart.left += sz_2;
+	    cart.rght -= sz_2;
+	    sz_2 = (cart.top - cart.btm) / 2;
+	    sz_2 *= s;
+	    cart.top -= sz_2;
+	    cart.btm += sz_2;
+	    set_cart(cart);
+	    elems = plot.getElementsByTagNameNS(svgNs, "polyline");
+	    for (e = 0; e < elems.length; e++) {
+		sw = Number(elems[e].getAttribute("stroke-width"));
+		if ( sw > 0.0 ) {
+		    sw *= s;
+		    elems[e].setAttribute("stroke-width", sw);
+		}
+	    }
+	    update_background();
+	    update_axes();
+	}
+	zoom_in.addEventListener("click", apply_zoom_in, false);
+	document.rootElement.appendChild(zoom_in);
+
+	var zoom_out = document.createElementNS(svgNs, "image");
+	zoom_out.setAttribute("x", "24");
+	zoom_out.setAttribute("y", "0");
+	zoom_out.setAttribute("width", "24");
+	zoom_out.setAttribute("height", "24");
+	zoom_out.setAttributeNS(xlinkNs, "xlink:href", zoom_out_img);
+	function apply_zoom_out(evt) {
+	    var s;			/* Scale factor */
+	    var cart;
+	    var sz_2;			/* Half width or height */
+	    var elems, e;		/* List of plot elements, loop index */
+	    var sw;			/* Stroke width */
+
+	    s = 3.0 / 2.0;
+	    cart = get_cart();
+	    sz_2 = (cart.rght - cart.left) / 2;
+	    sz_2 *= s;
+	    cart.left -= sz_2;
+	    cart.rght += sz_2;
+	    sz_2 = (cart.top - cart.btm) / 2;
+	    sz_2 *= s;
+	    cart.top += sz_2;
+	    cart.btm -= sz_2;
+	    set_cart(cart);
+	    elems = plot.getElementsByTagNameNS(svgNs, "polyline");
+	    for (e = 0; e < elems.length; e++) {
+		sw = Number(elems[e].getAttribute("stroke-width"));
+		if ( sw > 0.0 ) {
+		    sw *= s;
+		    elems[e].setAttribute("stroke-width", sw);
+		}
+	    }
+	    update_background();
+	    update_axes();
+	}
+	zoom_out.addEventListener("click", apply_zoom_out, false);
+	document.rootElement.appendChild(zoom_out);
 
 	/*
 	   Redraw the labels with javascript. This prevents sudden changes
