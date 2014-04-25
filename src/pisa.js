@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.37 $ $Date: 2014/04/24 22:35:03 $
+   .	$Revision: 1.38 $ $Date: 2014/04/25 16:54:08 $
  */
 
 /*
@@ -570,14 +570,47 @@ window.addEventListener("load", function (evt) {
 	}
 
 	/*
+	   This function applies zoom factor s to certain presentation
+	   attributes of element elem and its children. It is actually used to
+	   undo a zoom so that elements do not become thicker or thinner as the
+	   plot view zooms in and out.
+	 */
+
+	function zoom_attrs(elem, s)
+	{
+	    if ( elem.nodeType == Node.ELEMENT_NODE ) {
+		var attrs = ["stroke-width", "stroke-dashoffset",
+		    "markerWidth", "markerHeight"];
+		for (var n = 0; n < attrs.length; n++) {
+		    var a = Number(elem.getAttribute(attrs[n]));
+		    if ( a && a > 0.0 ) {
+			elem.setAttribute(attrs[n], a * s);
+		    }
+		}
+		a = Number(elem.getAttribute("stroke-dasharray"));
+		if ( a ) {
+		    var dash, dashes = "";
+		    for (dash in a.split(/\s+|,/)) {
+			dashes = dashes + " " + Number(dash) * s;
+		    }
+		    elem.setAttribute("stroke-dasharray", dashes);
+		}
+	    }
+	    var children = elem.childNodes;
+	    for (var c = 0; c < children.length; c++) {
+		zoom_attrs(children[c], s);
+	    }
+	}
+
+	/*
 	   This convenience function applies zoom factor s to the plot.
 	   s < 0 => zooming in, s > 0 => zooming out.
 	 */
 
-	function apply_zoom(s)
+	function zoom_plot(s)
 	{
 	    var cart;
-	    var elems, e;		/* List of plot elements, loop index */
+	    var children, c;		/* List of plot elements, loop index */
 	    var sw;			/* Stroke width */
 
 	    cart = get_cart();
@@ -586,13 +619,9 @@ window.addEventListener("load", function (evt) {
 	    cart.btm = (cart.btm * (1.0 + s) + cart.top * (1.0 - s)) / 2.0;
 	    cart.top = (cart.btm * (1.0 - s) + cart.top * (1.0 + s)) / 2.0;
 	    set_cart(cart);
-	    elems = plot.getElementsByTagNameNS(svgNs, "polyline");
-	    for (e = 0; e < elems.length; e++) {
-		sw = Number(elems[e].getAttribute("stroke-width"));
-		if ( sw > 0.0 ) {
-		    sw *= s;
-		    elems[e].setAttribute("stroke-width", sw);
-		}
+	    children = plot.childNodes;
+	    for (c = 0; c < children.length; c++) {
+		zoom_attrs(children[c], s);
 	    }
 	    update_background();
 	    update_axes();
@@ -606,7 +635,7 @@ window.addEventListener("load", function (evt) {
 	zoom_in.setAttribute("height", "24");
 	zoom_in.setAttributeNS(xlinkNs, "xlink:href", zoom_in_img);
 	zoom_in.addEventListener("click",
-		function (evt) { apply_zoom(3.0 / 4.0); }, false);
+		function (evt) { zoom_plot(3.0 / 4.0); }, false);
 	document.rootElement.appendChild(zoom_in);
 	var zoom_out = document.createElementNS(svgNs, "image");
 	zoom_out.setAttribute("x", "24");
@@ -615,7 +644,7 @@ window.addEventListener("load", function (evt) {
 	zoom_out.setAttribute("height", "24");
 	zoom_out.setAttributeNS(xlinkNs, "xlink:href", zoom_out_img);
 	zoom_out.addEventListener("click", 
-		function (evt) { apply_zoom(4.0 / 3.0); }, false);
+		function (evt) { zoom_plot(4.0 / 3.0); }, false);
 	document.rootElement.appendChild(zoom_out);
 
 	/*
