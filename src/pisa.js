@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.36 $ $Date: 2014/04/23 21:09:03 $
+   .	$Revision: 1.37 $ $Date: 2014/04/24 22:35:03 $
  */
 
 /*
@@ -569,82 +569,53 @@ window.addEventListener("load", function (evt) {
 	    cursor_loc.textContent = txt;
 	}
 
-	/* Zoom controls */
+	/*
+	   This convenience function applies zoom factor s to the plot.
+	   s < 0 => zooming in, s > 0 => zooming out.
+	 */
 
+	function apply_zoom(s)
+	{
+	    var cart;
+	    var elems, e;		/* List of plot elements, loop index */
+	    var sw;			/* Stroke width */
+
+	    cart = get_cart();
+	    cart.left = (cart.left * (1.0 + s) + cart.rght * (1.0 - s)) / 2.0;
+	    cart.rght = (cart.left * (1.0 - s) + cart.rght * (1.0 + s)) / 2.0;
+	    cart.btm = (cart.btm * (1.0 + s) + cart.top * (1.0 - s)) / 2.0;
+	    cart.top = (cart.btm * (1.0 - s) + cart.top * (1.0 + s)) / 2.0;
+	    set_cart(cart);
+	    elems = plot.getElementsByTagNameNS(svgNs, "polyline");
+	    for (e = 0; e < elems.length; e++) {
+		sw = Number(elems[e].getAttribute("stroke-width"));
+		if ( sw > 0.0 ) {
+		    sw *= s;
+		    elems[e].setAttribute("stroke-width", sw);
+		}
+	    }
+	    update_background();
+	    update_axes();
+	}
+
+	/* Zoom controls */
 	var zoom_in = document.createElementNS(svgNs, "image");
 	zoom_in.setAttribute("x", "0");
 	zoom_in.setAttribute("y", "0");
 	zoom_in.setAttribute("width", "24");
 	zoom_in.setAttribute("height", "24");
 	zoom_in.setAttributeNS(xlinkNs, "xlink:href", zoom_in_img);
-	function apply_zoom_in(evt) {
-	    var s;			/* Scale factor */
-	    var cart;
-	    var sz_2;			/* Half width or height */
-	    var elems, e;		/* List of plot elements, loop index */
-	    var sw;			/* Stroke width */
-
-	    s = 2.0 / 3.0;
-	    cart = get_cart();
-	    sz_2 = (cart.rght - cart.left) / 2;
-	    sz_2 *= s;
-	    cart.left += sz_2;
-	    cart.rght -= sz_2;
-	    sz_2 = (cart.top - cart.btm) / 2;
-	    sz_2 *= s;
-	    cart.top -= sz_2;
-	    cart.btm += sz_2;
-	    set_cart(cart);
-	    elems = plot.getElementsByTagNameNS(svgNs, "polyline");
-	    for (e = 0; e < elems.length; e++) {
-		sw = Number(elems[e].getAttribute("stroke-width"));
-		if ( sw > 0.0 ) {
-		    sw *= s;
-		    elems[e].setAttribute("stroke-width", sw);
-		}
-	    }
-	    update_background();
-	    update_axes();
-	}
-	zoom_in.addEventListener("click", apply_zoom_in, false);
+	zoom_in.addEventListener("click",
+		function (evt) { apply_zoom(3.0 / 4.0); }, false);
 	document.rootElement.appendChild(zoom_in);
-
 	var zoom_out = document.createElementNS(svgNs, "image");
 	zoom_out.setAttribute("x", "24");
 	zoom_out.setAttribute("y", "0");
 	zoom_out.setAttribute("width", "24");
 	zoom_out.setAttribute("height", "24");
 	zoom_out.setAttributeNS(xlinkNs, "xlink:href", zoom_out_img);
-	function apply_zoom_out(evt) {
-	    var s;			/* Scale factor */
-	    var cart;
-	    var sz_2;			/* Half width or height */
-	    var elems, e;		/* List of plot elements, loop index */
-	    var sw;			/* Stroke width */
-
-	    s = 3.0 / 2.0;
-	    cart = get_cart();
-	    sz_2 = (cart.rght - cart.left) / 2;
-	    sz_2 *= s;
-	    cart.left -= sz_2;
-	    cart.rght += sz_2;
-	    sz_2 = (cart.top - cart.btm) / 2;
-	    sz_2 *= s;
-	    cart.top += sz_2;
-	    cart.btm -= sz_2;
-	    set_cart(cart);
-	    elems = plot.getElementsByTagNameNS(svgNs, "polyline");
-	    for (e = 0; e < elems.length; e++) {
-		sw = Number(elems[e].getAttribute("stroke-width"));
-		if ( sw > 0.0 ) {
-		    sw *= s;
-		    elems[e].setAttribute("stroke-width", sw);
-		}
-	    }
-	    update_background();
-	    update_axes();
-	}
-	zoom_out.addEventListener("click", apply_zoom_out, false);
+	zoom_out.addEventListener("click", 
+		function (evt) { apply_zoom(4.0 / 3.0); }, false);
 	document.rootElement.appendChild(zoom_out);
 
 	/*
