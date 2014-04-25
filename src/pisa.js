@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.39 $ $Date: 2014/04/25 19:32:49 $
+   .	$Revision: 1.40 $ $Date: 2014/04/25 19:33:32 $
  */
 
 /*
@@ -48,11 +48,12 @@ window.addEventListener("load", function (evt)
 	var zoom_out_img = "zoom_out.svg";
 
 	/* These objects store information about the plot elements */
+	var rootElement = document.rootElement;
 	var plot = document.getElementById("plot");
 	var plotBackground = document.getElementById("plotBackground");
 	var cartG = document.getElementById("cartG");
-	var x_axis = document.getElementById("xAxis");
-	var y_axis = document.getElementById("yAxis");
+	var xAxis = document.getElementById("xAxis");
+	var yAxis = document.getElementById("yAxis");
 
 	/*
 	   Axis labels:
@@ -90,12 +91,12 @@ window.addEventListener("load", function (evt)
 	var prevEvtSVGX, prevEvtSVGY;	/* SVG coordinates of mouse at previous
 					   mouse event during drag */
 
-	plotSVGX = Number(plot.getAttribute("x"));
-	plotSVGY = Number(plot.getAttribute("y"));
-	xAxisSVGX = Number(x_axis.getAttribute("x"));
-	xAxisSVGY = Number(x_axis.getAttribute("y"));
-	yAxisSVGX = Number(y_axis.getAttribute("x"));
-	yAxisSVGY = Number(y_axis.getAttribute("y"));
+	plotSVGX = plot.x.baseVal.value;
+	plotSVGY = plot.y.baseVal.value;
+	xAxisSVGX = xAxis.x.baseVal.value;
+	xAxisSVGY = xAxis.y.baseVal.value;
+	yAxisSVGX = yAxis.x.baseVal.value;
+	yAxisSVGY = yAxis.y.baseVal.value;
 
 	/* Local function definitions */
 
@@ -239,41 +240,46 @@ window.addEventListener("load", function (evt)
 
 	function apply_x_coords(coords)
 	{
-	    var x_svg, y_svg;		/* Label location */
-	    var plot_right;		/* SVG x coordinate of right side
-					   of plot */
+	    var x;			/* Label location */
+	    var y;			/* Label text location */
+	    var y1, y2;			/* Limits of tic */
+	    var plotLeft, plotRght;	/* SVG x coordinates of left and right
+					   side of plot */
 	    var l;			/* Label index */
 	    var textLength;		/* SVG width required display text of
 					   all labels */
 	    var lbl, tic;		/* New label and tic elements */
 
-	    y_svg = xAxisSVGY + 1.5 * tick_len;
-	    plot_right = plotSVGX + Number(plot.getAttribute("width"));
+	    y = xAxis.y.baseVal.value + 1.5 * tick_len;
+	    y1 = xAxis.y.baseVal.value;
+	    y2 = y1 + tick_len;
+	    plotLeft = plot.x.baseVal.value;
+	    plotRght = plotLeft + plot.width.baseVal.value;
 	    for (l = 0, textLength = 0.0; l < coords.length; l++) {
 		if ( !x_labels[l] ) {
 		    lbl = document.createElementNS(svgNs, "text");
 		    lbl.setAttribute("class", "x axis label");
 		    lbl.setAttribute("text-anchor", "middle");
 		    lbl.setAttribute("dominant-baseline", "hanging");
-		    x_axis.appendChild(lbl);
+		    xAxis.appendChild(lbl);
 		    tic = document.createElementNS(svgNs, "line");
 		    tic.setAttribute("class", "x axis tic");
 		    tic.setAttribute("stroke", "black");
 		    tic.setAttribute("stroke-width", "1");
-		    x_axis.appendChild(tic);
+		    xAxis.appendChild(tic);
 		    x_labels[l] = {};
 		    x_labels[l].lbl = lbl;
 		    x_labels[l].tic = tic;
 		}
-		x_svg = cart_x_to_svg(coords[l]);
-		if ( plotSVGX <= x_svg && x_svg <= plot_right ) {
-		    x_labels[l].lbl.setAttribute("x", x_svg);
-		    x_labels[l].lbl.setAttribute("y", y_svg);
+		x = cart_x_to_svg(coords[l]);
+		if ( plotLeft <= x && x <= plotRght ) {
+		    x_labels[l].lbl.setAttribute("x", x);
+		    x_labels[l].lbl.setAttribute("y", y);
 		    x_labels[l].lbl.textContent = to_prx(coords[l], x_prx);
-		    x_labels[l].tic.setAttribute("x1", x_svg);
-		    x_labels[l].tic.setAttribute("x2", x_svg);
-		    x_labels[l].tic.setAttribute("y1", xAxisSVGY);
-		    x_labels[l].tic.setAttribute("y2", xAxisSVGY + tick_len);
+		    x_labels[l].tic.setAttribute("x1", x);
+		    x_labels[l].tic.setAttribute("x2", x);
+		    x_labels[l].tic.setAttribute("y1", y1);
+		    x_labels[l].tic.setAttribute("y2", y2);
 		    textLength += x_labels[l].lbl.getComputedTextLength();
 		} else {
 		    hide_label(x_labels[l]);
@@ -292,45 +298,50 @@ window.addEventListener("load", function (evt)
 
 	function apply_y_coords(coords)
 	{
-	    var x_svg;			/* SVG x coordinates of RIGHT side of
+	    var yAxisRght;		/* SVG x coordinates of RIGHT side of
 					   y axis element */
-	    var y_svg;			/* SVG y coordinate of a label */
-	    var width;			/* Width of y axis element */
-	    var plot_btm;		/* SVG y coordinate of bottom of plot */
+	    var x;			/* Label text location */
+	    var x1, x2;			/* Limits of tic */
+	    var y;			/* SVG y coordinate of a label */
+	    var plotTop, plotBtm;	/* SVG y coordinates of top and bottom
+					   of plot */
 	    var l;			/* Label, coordinate index */
 	    var bbox;			/* Bounding box for an element */
 	    var font_ht;		/* Character height */
 	    var textHeight;		/* Total display height */
 	    var lbl, tic;
 
-	    width = Number(y_axis.getAttribute("width"));
-	    x_svg = yAxisSVGX + width;
-	    plot_btm = plotSVGY + Number(plot.getAttribute("height"));
+	    yAxisRght = yAxis.x.baseVal.value + yAxis.width.baseVal.value;
+	    x = yAxisRght - 1.5 * tick_len;
+	    x1 = yAxisRght - tick_len;
+	    x2 = yAxisRght;
+	    plotTop = plot.y.baseVal.value;
+	    plotBtm = plotTop + plot.height.baseVal.value;
 	    for (l = 0, textHeight = 0.0; l < coords.length; l++) {
 		if ( !y_labels[l] ) {
 		    lbl = document.createElementNS(svgNs, "text");
 		    lbl.setAttribute("class", "y axis label");
 		    lbl.setAttribute("text-anchor", "end");
 		    lbl.setAttribute("dominant-baseline", "mathematical");
-		    y_axis.appendChild(lbl);
+		    yAxis.appendChild(lbl);
 		    tic = document.createElementNS(svgNs, "line");
 		    tic.setAttribute("class", "y axis tic");
 		    tic.setAttribute("stroke", "black");
 		    tic.setAttribute("stroke-width", "1");
-		    y_axis.appendChild(tic);
+		    yAxis.appendChild(tic);
 		    y_labels[l] = {};
 		    y_labels[l].lbl = lbl;
 		    y_labels[l].tic = tic;
 		}
-		y_svg = cart_y_to_svg(coords[l]);
-		if ( plotSVGY <= y_svg && y_svg <= plot_btm ) {
-		    y_labels[l].lbl.setAttribute("x", x_svg - 1.5 * tick_len);
-		    y_labels[l].lbl.setAttribute("y", y_svg);
+		y = cart_y_to_svg(coords[l]);
+		if ( plotSVGY <= y && y <= plotBtm ) {
+		    y_labels[l].lbl.setAttribute("x", x);
+		    y_labels[l].lbl.setAttribute("y", y);
 		    y_labels[l].lbl.textContent = to_prx(coords[l], y_prx);
-		    y_labels[l].tic.setAttribute("x1", x_svg - tick_len);
-		    y_labels[l].tic.setAttribute("x2", x_svg);
-		    y_labels[l].tic.setAttribute("y1", y_svg);
-		    y_labels[l].tic.setAttribute("y2", y_svg);
+		    y_labels[l].tic.setAttribute("x1", x1);
+		    y_labels[l].tic.setAttribute("x2", x2);
+		    y_labels[l].tic.setAttribute("y1", y);
+		    y_labels[l].tic.setAttribute("y2", y);
 		    bbox = y_labels[l].lbl.getBBox();
 		    textHeight += bbox.height;
 		} else {
@@ -415,23 +426,23 @@ window.addEventListener("load", function (evt)
 	    cart = get_cart();
 
 	    /* Restore x axis position and update viewBox */
-	    x_axis.setAttribute("x", xAxisSVGX);
+	    xAxis.setAttribute("x", xAxisSVGX);
 	    viewBox = xAxisSVGX;
-	    viewBox += " " + x_axis.viewBox.baseVal.y;
-	    viewBox += " " + x_axis.viewBox.baseVal.width;
-	    viewBox += " " + x_axis.viewBox.baseVal.height;
-	    x_axis.setAttribute("viewBox", viewBox);
+	    viewBox += " " + xAxis.viewBox.baseVal.y;
+	    viewBox += " " + xAxis.viewBox.baseVal.width;
+	    viewBox += " " + xAxis.viewBox.baseVal.height;
+	    xAxis.setAttribute("viewBox", viewBox);
 
 	    /* Create new labels for x axis */
 	    mk_labels(cart.left, cart.rght, apply_x_coords, widthSVG / 4);
 
 	    /* Restore y axis position and update viewBox */
-	    y_axis.setAttribute("y", yAxisSVGY);
-	    viewBox = y_axis.viewBox.baseVal.x;
+	    yAxis.setAttribute("y", yAxisSVGY);
+	    viewBox = yAxis.viewBox.baseVal.x;
 	    viewBox += " " + yAxisSVGY;
-	    viewBox += " " + y_axis.viewBox.baseVal.width;
-	    viewBox += " " + y_axis.viewBox.baseVal.height;
-	    y_axis.setAttribute("viewBox", viewBox);
+	    viewBox += " " + yAxis.viewBox.baseVal.width;
+	    viewBox += " " + yAxis.viewBox.baseVal.height;
+	    yAxis.setAttribute("viewBox", viewBox);
 
 	    /* Create new labels for y axis */
 	    mk_labels(cart.btm, cart.top, apply_y_coords, htSVG / 4);
@@ -465,20 +476,14 @@ window.addEventListener("load", function (evt)
 
 	function plot_drag(evt)
 	{
-	    var x, y;			/* SVG coordinates of plot and axis
-					   SVG elements */
 	    var dx, dy;			/* How much to move the elements */
 
 	    dx = evt.clientX - prevEvtSVGX;
 	    dy = evt.clientY - prevEvtSVGY;
-	    x = Number(plot.getAttribute("x"));
-	    y = Number(plot.getAttribute("y"));
-	    plot.setAttribute("x", x + dx);
-	    plot.setAttribute("y", y + dy);
-	    x = Number(x_axis.getAttribute("x"));
-	    x_axis.setAttribute("x", x + dx);
-	    y = Number(y_axis.getAttribute("y"));
-	    y_axis.setAttribute("y", y + dy);
+	    plot.setAttribute("x", plot.x.baseVal.value + dx);
+	    plot.setAttribute("y", plot.y.baseVal.value + dy);
+	    xAxis.setAttribute("x", xAxis.x.baseVal.value + dx);
+	    yAxis.setAttribute("y", yAxis.y.baseVal.value + dy);
 	    prevEvtSVGX = evt.clientX;
 	    prevEvtSVGY = evt.clientY;
 	}
@@ -561,7 +566,7 @@ window.addEventListener("load", function (evt)
 	cursor_loc.setAttribute("x", "12");
 	cursor_loc.setAttribute("y", "48");
 	cursor_loc.textContent = "x y";
-	document.rootElement.appendChild(cursor_loc);
+	rootElement.appendChild(cursor_loc);
 
 	function update_cursor_loc(evt)
 	{
@@ -638,7 +643,7 @@ window.addEventListener("load", function (evt)
 	zoom_in.setAttributeNS(xlinkNs, "xlink:href", zoom_in_img);
 	zoom_in.addEventListener("click",
 		function (evt) { zoom_plot(3.0 / 4.0); }, false);
-	document.rootElement.appendChild(zoom_in);
+	rootElement.appendChild(zoom_in);
 	var zoom_out = document.createElementNS(svgNs, "image");
 	zoom_out.setAttribute("x", "24");
 	zoom_out.setAttribute("y", "0");
@@ -647,7 +652,16 @@ window.addEventListener("load", function (evt)
 	zoom_out.setAttributeNS(xlinkNs, "xlink:href", zoom_out_img);
 	zoom_out.addEventListener("click", 
 		function (evt) { zoom_plot(4.0 / 3.0); }, false);
-	document.rootElement.appendChild(zoom_out);
+	rootElement.appendChild(zoom_out);
+
+	/*
+	   Grow plot if window resizes.
+	 */
+
+	function resize(evt)
+	{
+	}
+	rootElement.addEventListener("SVGResize", resize, false);
 
 	/*
 	   Redraw the labels with javascript. This prevents sudden changes
@@ -655,11 +669,11 @@ window.addEventListener("load", function (evt)
 	   differs from the Javascript rendition.
 	 */
 
-	while ( x_axis.lastChild ) {
-	    x_axis.removeChild(x_axis.lastChild);
+	while ( xAxis.lastChild ) {
+	    xAxis.removeChild(xAxis.lastChild);
 	}
-	while ( y_axis.lastChild ) {
-	    y_axis.removeChild(y_axis.lastChild);
+	while ( yAxis.lastChild ) {
+	    yAxis.removeChild(yAxis.lastChild);
 	}
 	update_axes();
 
