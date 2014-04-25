@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.38 $ $Date: 2014/04/25 16:54:08 $
+   .	$Revision: 1.39 $ $Date: 2014/04/25 19:32:49 $
  */
 
 /*
@@ -37,7 +37,8 @@
    plot variables and functions persist anonymously in closures.
  */
 
-window.addEventListener("load", function (evt) {
+window.addEventListener("load", function (evt)
+{
 
 	"use strict";
 	/*jslint browser:true */
@@ -220,7 +221,8 @@ window.addEventListener("load", function (evt) {
 	   The elements still exist in the document.
 	 */ 
 
-	function hide_label(label) {
+	function hide_label(label)
+	{
 	    label.lbl.setAttribute("x", -80.0);
 	    label.lbl.setAttribute("y", -80.0);
 	    label.lbl.textContent = "";
