@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.40 $ $Date: 2014/04/25 19:33:32 $
+   .	$Revision: 1.41 $ $Date: 2014/04/25 22:19:24 $
  */
 
 /*
@@ -48,7 +48,7 @@ window.addEventListener("load", function (evt)
 	var zoom_out_img = "zoom_out.svg";
 
 	/* These objects store information about the plot elements */
-	var rootElement = document.rootElement;
+	var root = document.rootElement;
 	var plot = document.getElementById("plot");
 	var plotBackground = document.getElementById("plotBackground");
 	var cartG = document.getElementById("cartG");
@@ -98,6 +98,19 @@ window.addEventListener("load", function (evt)
 	yAxisSVGX = yAxis.x.baseVal.value;
 	yAxisSVGY = yAxis.y.baseVal.value;
 
+	/*
+	   Record root element dimensions and margins around plot.
+	   These will be needed if root element resizes.
+	   rootWidth and rootHght might change. Margins will be preserved.
+	 */
+
+	var rootWidth = root.width.baseVal.value;
+	var rootHght = root.height.baseVal.value;
+	var leftMgn = plot.x.baseVal.value;
+	var rghtMgn = rootWidth - leftMgn - plot.width.baseVal.value;
+	var topMgn = plot.y.baseVal.value;
+	var btmMgn = rootHght - topMgn - plot.height.baseVal.value;
+
 	/* Local function definitions */
 
 	/*
@@ -125,7 +138,7 @@ window.addEventListener("load", function (evt)
 	}
 
 	/*
-	   Set limits of plot area in Cartesian coordinates from cart,
+	   Set transform for plot area in Cartesian coordinates from cart,
 	   which is an object with the same members as the return value
 	   from get_cart. This only modifies the <g ...> element that
 	   provides the transform. It does not redraw the axes.
@@ -566,7 +579,7 @@ window.addEventListener("load", function (evt)
 	cursor_loc.setAttribute("x", "12");
 	cursor_loc.setAttribute("y", "48");
 	cursor_loc.textContent = "x y";
-	rootElement.appendChild(cursor_loc);
+	root.appendChild(cursor_loc);
 
 	function update_cursor_loc(evt)
 	{
@@ -643,7 +656,7 @@ window.addEventListener("load", function (evt)
 	zoom_in.setAttributeNS(xlinkNs, "xlink:href", zoom_in_img);
 	zoom_in.addEventListener("click",
 		function (evt) { zoom_plot(3.0 / 4.0); }, false);
-	rootElement.appendChild(zoom_in);
+	root.appendChild(zoom_in);
 	var zoom_out = document.createElementNS(svgNs, "image");
 	zoom_out.setAttribute("x", "24");
 	zoom_out.setAttribute("y", "0");
@@ -652,7 +665,7 @@ window.addEventListener("load", function (evt)
 	zoom_out.setAttributeNS(xlinkNs, "xlink:href", zoom_out_img);
 	zoom_out.addEventListener("click", 
 		function (evt) { zoom_plot(4.0 / 3.0); }, false);
-	rootElement.appendChild(zoom_out);
+	root.appendChild(zoom_out);
 
 	/*
 	   Grow plot if window resizes.
@@ -660,8 +673,29 @@ window.addEventListener("load", function (evt)
 
 	function resize(evt)
 	{
+	    var newWidth, newHght;
+	    var cart;
+	    var mPerPx;
+	    var delta;
+
+	    cart = get_cart();
+	    mPerPx = (cart.rght - cart.left) / plot.width.baseVal.value;
+	    delta = (root.width.baseVal.value - rootWidth) * mPerPx;
+	    cart.left -= delta / 2;
+	    cart.rght += delta / 2;
+	    mPerPx = (cart.top - cart.btm) / plot.height.baseVal.value;
+	    delta = (root.height.baseVal.value - rootHght) * mPerPx;
+	    cart.top += delta / 2;
+	    cart.btm -= delta / 2;
+	    set_cart(cart);
+	    rootWidth = root.width.baseVal.value;
+	    rootHght = root.height.baseVal.value;
+	    plot.setAttribute("width", rootWidth - leftMgn - rghtMgn);
+	    plot.setAttribute("height", rootHght - topMgn - btmMgn);
+	    update_background();
+	    update_axes();
 	}
-	rootElement.addEventListener("SVGResize", resize, false);
+	root.addEventListener("SVGResize", resize, true);
 
 	/*
 	   Redraw the labels with javascript. This prevents sudden changes
