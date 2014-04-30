@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.41 $ $Date: 2014/04/25 22:19:24 $
+   .	$Revision: 1.42 $ $Date: 2014/04/30 19:08:55 $
  */
 
 /*
@@ -97,19 +97,6 @@ window.addEventListener("load", function (evt)
 	xAxisSVGY = xAxis.y.baseVal.value;
 	yAxisSVGX = yAxis.x.baseVal.value;
 	yAxisSVGY = yAxis.y.baseVal.value;
-
-	/*
-	   Record root element dimensions and margins around plot.
-	   These will be needed if root element resizes.
-	   rootWidth and rootHght might change. Margins will be preserved.
-	 */
-
-	var rootWidth = root.width.baseVal.value;
-	var rootHght = root.height.baseVal.value;
-	var leftMgn = plot.x.baseVal.value;
-	var rghtMgn = rootWidth - leftMgn - plot.width.baseVal.value;
-	var topMgn = plot.y.baseVal.value;
-	var btmMgn = rootHght - topMgn - plot.height.baseVal.value;
 
 	/* Local function definitions */
 
@@ -666,36 +653,6 @@ window.addEventListener("load", function (evt)
 	zoom_out.addEventListener("click", 
 		function (evt) { zoom_plot(4.0 / 3.0); }, false);
 	root.appendChild(zoom_out);
-
-	/*
-	   Grow plot if window resizes.
-	 */
-
-	function resize(evt)
-	{
-	    var newWidth, newHght;
-	    var cart;
-	    var mPerPx;
-	    var delta;
-
-	    cart = get_cart();
-	    mPerPx = (cart.rght - cart.left) / plot.width.baseVal.value;
-	    delta = (root.width.baseVal.value - rootWidth) * mPerPx;
-	    cart.left -= delta / 2;
-	    cart.rght += delta / 2;
-	    mPerPx = (cart.top - cart.btm) / plot.height.baseVal.value;
-	    delta = (root.height.baseVal.value - rootHght) * mPerPx;
-	    cart.top += delta / 2;
-	    cart.btm -= delta / 2;
-	    set_cart(cart);
-	    rootWidth = root.width.baseVal.value;
-	    rootHght = root.height.baseVal.value;
-	    plot.setAttribute("width", rootWidth - leftMgn - rghtMgn);
-	    plot.setAttribute("height", rootHght - topMgn - btmMgn);
-	    update_background();
-	    update_axes();
-	}
-	root.addEventListener("SVGResize", resize, true);
 
 	/*
 	   Redraw the labels with javascript. This prevents sudden changes
