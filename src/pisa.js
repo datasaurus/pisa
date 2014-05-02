@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.42 $ $Date: 2014/04/30 19:08:55 $
+   .	$Revision: 1.41 $ $Date: 2014/04/25 22:19:24 $
  */
 
 /*
@@ -43,6 +43,13 @@ window.addEventListener("load", function (evt)
 	"use strict";
 	/*jslint browser:true */
 
+	/* Length of an axis tick mark, pixels */
+	var tick_len = 9.0;
+
+	/* Number of significant digits in axis labels */
+	var x_prx = 3;
+	var y_prx = 3;
+
 	/* Links to external images for buttons */
 	var zoom_in_img = "zoom_in.svg";
 	var zoom_out_img = "zoom_out.svg";
@@ -53,7 +60,17 @@ window.addEventListener("load", function (evt)
 	var plotBackground = document.getElementById("plotBackground");
 	var cartG = document.getElementById("cartG");
 	var xAxis = document.getElementById("xAxis");
+	var xAxisClip = document.getElementById("xAxisClipRect");
 	var yAxis = document.getElementById("yAxis");
+	var yAxisClip = document.getElementById("yAxisClipRect");
+
+	/*
+	   Axis labels are allowed to extend beyond plot edge by
+	   xOverHang and yOverHang pixels.
+	 */
+
+	var xOverHang = xAxis.width.baseVal.value - plot.width.baseVal.value;
+	var yOverHang = yAxis.height.baseVal.value - plot.height.baseVal.value;
 
 	/*
 	   Axis labels:
@@ -65,12 +82,6 @@ window.addEventListener("load", function (evt)
 
 	var x_labels = [];
 	var y_labels = [];
-
-	var tick_len = 9.0;		/* Length of an axis tick */
-
-	/* Number of significant digits in axis labels */
-	var x_prx = 3;
-	var y_prx = 3;
 
 	var svgNs = "http://www.w3.org/2000/svg";
 	var xlinkNs="http://www.w3.org/1999/xlink";
@@ -97,6 +108,19 @@ window.addEventListener("load", function (evt)
 	xAxisSVGY = xAxis.y.baseVal.value;
 	yAxisSVGX = yAxis.x.baseVal.value;
 	yAxisSVGY = yAxis.y.baseVal.value;
+
+	/*
+	   Record root element dimensions and margins around plot.
+	   These will be needed if root element resizes.
+	   rootWidth and rootHght might change. Margins will be preserved.
+	 */
+
+	var rootWidth = root.width.baseVal.value;
+	var rootHght = root.height.baseVal.value;
+	var leftMgn = plot.x.baseVal.value;
+	var rghtMgn = rootWidth - leftMgn - plot.width.baseVal.value;
+	var topMgn = plot.y.baseVal.value;
+	var btmMgn = rootHght - topMgn - plot.height.baseVal.value;
 
 	/* Local function definitions */
 
@@ -134,13 +158,13 @@ window.addEventListener("load", function (evt)
 	function set_cart(cart)
 	{
 	    var xForm = cartG.transform.baseVal.getItem(0).matrix;
-	    var widthSVG = plot.width.baseVal.value;
+	    var plotWidth = plot.width.baseVal.value;
 	    var htSVG = plot.height.baseVal.value;
-	    xForm.a = widthSVG / (cart.rght - cart.left);
+	    xForm.a = plotWidth / (cart.rght - cart.left);
 	    xForm.b = 0.0;
 	    xForm.c = 0.0;
 	    xForm.d = htSVG / (cart.btm - cart.top);
-	    xForm.e = widthSVG * cart.left / (cart.left - cart.rght);
+	    xForm.e = plotWidth * cart.left / (cart.left - cart.rght);
 	    xForm.f = htSVG * cart.top / (cart.top - cart.btm);
 	}
 
@@ -148,9 +172,9 @@ window.addEventListener("load", function (evt)
 	function cart_x_to_svg(cartX)
 	{
 	    var xLeftSVG = plot.x.baseVal.value;
-	    var widthSVG = plot.width.baseVal.value;
+	    var plotWidth = plot.width.baseVal.value;
 	    var cart = get_cart();
-	    var pxPerM = widthSVG / (cart.rght - cart.left);
+	    var pxPerM = plotWidth / (cart.rght - cart.left);
 	    return xLeftSVG + (cartX - cart.left) * pxPerM;
 	}
 
@@ -158,9 +182,9 @@ window.addEventListener("load", function (evt)
 	function svg_x_to_cart(svgX)
 	{
 	    var xLeftSVG = plot.x.baseVal.value;
-	    var widthSVG = plot.width.baseVal.value;
+	    var plotWidth = plot.width.baseVal.value;
 	    var cart = get_cart();
-	    var mPerPx = (cart.rght - cart.left) / widthSVG;
+	    var mPerPx = (cart.rght - cart.left) / plotWidth;
 	    return cart.left + (svgX - xLeftSVG) * mPerPx;
 	}
 
@@ -307,7 +331,6 @@ window.addEventListener("load", function (evt)
 					   of plot */
 	    var l;			/* Label, coordinate index */
 	    var bbox;			/* Bounding box for an element */
-	    var font_ht;		/* Character height */
 	    var textHeight;		/* Total display height */
 	    var lbl, tic;
 
@@ -415,37 +438,47 @@ window.addEventListener("load", function (evt)
 	/* Label the plot axes. */
 	function update_axes ()
 	{
-	    var viewBox;		/* axis viewBox */
-	    var widthSVG;		/* Plot width, SVG coordinates */
-	    var htSVG;			/* Plot height, SVG coordinates */
+	    var viewBox;		/* Axis viewBox */
+	    var plotWidth;		/* Plot width, SVG coordinates */
+	    var plotHeight;		/* Plot height, SVG coordinates */
+	    var axisWidth;		/* Axis width, SVG coordinates */
+	    var axisHeight;		/* Axis height, SVG coordinates */
 	    var cart;			/* Limits of plot in Cartesian
 					   coordinates */
 
-	    widthSVG = plot.width.baseVal.value;
-	    htSVG = plot.height.baseVal.value;
+	    plotWidth = plot.width.baseVal.value;
+	    plotHeight = plot.height.baseVal.value;
 	    cart = get_cart();
 
 	    /* Restore x axis position and update viewBox */
 	    xAxis.setAttribute("x", xAxisSVGX);
+	    xAxisSVGY = plotSVGY + plotHeight;
+	    xAxis.setAttribute("y", xAxisSVGY);
+	    axisWidth = plotWidth + xOverHang;
+	    xAxis.setAttribute("width", axisWidth);
+	    xAxisClip.setAttribute("y", xAxisSVGY);
+	    xAxisClip.setAttribute("width", axisWidth);
 	    viewBox = xAxisSVGX;
-	    viewBox += " " + xAxis.viewBox.baseVal.y;
-	    viewBox += " " + xAxis.viewBox.baseVal.width;
+	    viewBox += " " + xAxisSVGY;
+	    viewBox += " " + axisWidth;
 	    viewBox += " " + xAxis.viewBox.baseVal.height;
 	    xAxis.setAttribute("viewBox", viewBox);
 
 	    /* Create new labels for x axis */
-	    mk_labels(cart.left, cart.rght, apply_x_coords, widthSVG / 4);
+	    mk_labels(cart.left, cart.rght, apply_x_coords, plotWidth / 4);
 
 	    /* Restore y axis position and update viewBox */
 	    yAxis.setAttribute("y", yAxisSVGY);
+	    axisHeight = plotHeight + yOverHang;
+	    yAxis.setAttribute("height", axisHeight);
 	    viewBox = yAxis.viewBox.baseVal.x;
 	    viewBox += " " + yAxisSVGY;
 	    viewBox += " " + yAxis.viewBox.baseVal.width;
-	    viewBox += " " + yAxis.viewBox.baseVal.height;
+	    viewBox += " " + axisHeight;
 	    yAxis.setAttribute("viewBox", viewBox);
 
 	    /* Create new labels for y axis */
-	    mk_labels(cart.btm, cart.top, apply_y_coords, htSVG / 4);
+	    mk_labels(cart.btm, cart.top, apply_y_coords, plotHeight / 4);
 	}
 
 	/* Draw the background */
@@ -502,15 +535,15 @@ window.addEventListener("load", function (evt)
 	       move plot viewBox by this amount
 	     */
 
-	    var widthSVG, htSVG;	/* SVG dimensions of plot area */
+	    var plotWidth, htSVG;	/* SVG dimensions of plot area */
 	    var cart;			/* Cartesian dimensions of plot area */
 	    var mPerPx;			/* Convert Cartesian distance to SVG */
 	    var dx, dy;			/* Drag distance in Cartesian
 					   coordinates */
 
 	    cart = get_cart();
-	    widthSVG = plot.width.baseVal.value;
-	    mPerPx = (cart.rght - cart.left) / widthSVG;
+	    plotWidth = plot.width.baseVal.value;
+	    mPerPx = (cart.rght - cart.left) / plotWidth;
 	    dx = (dragSVGX0 - evt.clientX) * mPerPx;
 	    cart.left += dx;
 	    cart.rght += dx;
@@ -572,7 +605,9 @@ window.addEventListener("load", function (evt)
 	{
 	    var x = svg_x_to_cart(evt.clientX);
 	    var y = svg_y_to_cart(evt.clientY);
-	    var txt = "Cursor: " + to_prx(x, x_prx) + " " + to_prx(y, x_prx);
+	    var txt = "Cursor: ";
+	    txt = txt + evt.clientX + " " + evt.clientY + " => ";
+	    txt = txt + to_prx(x, x_prx) + " " + to_prx(y, x_prx);
 	    cursor_loc.textContent = txt;
 	}
 
@@ -655,7 +690,57 @@ window.addEventListener("load", function (evt)
 	root.appendChild(zoom_out);
 
 	/*
-	   Redraw the labels with javascript. This prevents sudden changes
+	   Grow plot if window resizes.
+	 */
+
+	function resize(evt)
+	{
+	    var innerWidth = this.innerWidth;
+	    var innerHeight = this.innerHeight;
+
+	    var currRootWidth = root.width.baseVal.value;
+	    var currRootHeight = root.height.baseVal.value;
+	    var newRootWidth = innerWidth;
+	    var newRootHeight = innerHeight
+
+	    var currPlotWidth = plot.width.baseVal.value;
+	    var currPlotHeight = plot.height.baseVal.value;
+	    var newPlotWidth = newRootWidth - leftMgn - rghtMgn;
+	    var newPlotHeight = newRootHeight - topMgn - btmMgn;
+
+	    var cart = get_cart();
+	    var mPerPx;
+	    var delta;			/* Increase in plot width or height,
+					   Cartesian coordinates */
+
+	    /* Update Cartesian limits using current plot rectangle */
+	    mPerPx = (cart.rght - cart.left) / currPlotWidth;
+	    delta = (newRootWidth - currRootWidth) * mPerPx;
+	    cart.left -= delta / 2;
+	    cart.rght += delta / 2;
+
+	    mPerPx = (cart.top - cart.btm) / currPlotHeight;
+	    delta = (newRootHeight - currRootHeight) * mPerPx;
+	    cart.top += delta / 2;
+	    cart.btm -= delta / 2;
+
+	    /* Adjust plot rectangle */
+	    root.setAttribute("width", newRootWidth);
+	    root.setAttribute("height", newRootHeight);
+	    plot.setAttribute("width", newPlotWidth);
+	    plot.setAttribute("height", newPlotHeight);
+	    var plotArea = document.getElementById("PlotRect");
+	    plotArea.setAttribute("width", newPlotWidth);
+	    plotArea.setAttribute("height", newPlotHeight);
+
+	    set_cart(cart);
+	    update_background();
+	    update_axes();
+	}
+	this.addEventListener("resize", resize, true);
+
+	/*
+	   Redraw with javascript. This prevents sudden changes
 	   in the image is the static document from the awk script noticeably
 	   differs from the Javascript rendition.
 	 */
@@ -666,7 +751,7 @@ window.addEventListener("load", function (evt)
 	while ( yAxis.lastChild ) {
 	    yAxis.removeChild(yAxis.lastChild);
 	}
-	update_axes();
+	resize.call(this, {});
 
 }, false);			/* Done defining load callback */
 

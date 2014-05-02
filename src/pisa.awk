@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.34 $ $Date: 2014/04/23 17:15:00 $
+# $Revision: 1.35 $ $Date: 2014/04/23 21:09:03 $
 #
 ################################################################################
 
@@ -431,8 +431,10 @@ function print_header()
     x_axis_width = plot_w_px + 8.0 * font_sz;
     x_axis_height = 3 * font_sz;
     printf "  <!-- Clip path for x axis labels -->\n";
-    printf "  <clipPath id=\"xAxisClip\">\n";
+    printf "  <clipPath>\n";
+    printf "    id=\"xAxisClip\"\n";
     printf "    <rect\n";
+    printf "        id=\"xAxisClipRect\"\n";
     printf "        x=\"%f\"\n", x_axis_left;
     printf "        y=\"%f\"\n", x_axis_top;
     printf "        width=\"%f\"\n", x_axis_width;
@@ -445,8 +447,10 @@ function print_header()
     y_axis_width = 9.0 * font_sz;
     y_axis_height = plot_h_px + 3.0 * font_sz;
     printf "  <!-- Clip path for y axis labels -->\n";
-    printf "  <clipPath id=\"yAxisClip\">\n";
+    printf "  <clipPath>\n";
+    printf "    id=\"yAxisClip\">\n";
     printf "    <rect\n";
+    printf "        id=\"yAxisClipRect\"\n";
     printf "        x=\"%f\"\n", y_axis_left;
     printf "        y=\"%f\"\n", y_axis_top;
     printf "        width=\"%f\"\n", y_axis_width;
