@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.41 $ $Date: 2014/04/25 22:19:24 $
+   .	$Revision: 1.44 $ $Date: 2014/05/02 19:10:02 $
  */
 
 /*
@@ -651,19 +651,16 @@ window.addEventListener("load", function (evt)
 
 	function zoom_plot(s)
 	{
-	    var cart;
-	    var children, c;		/* List of plot elements, loop index */
-	    var sw;			/* Stroke width */
-
-	    cart = get_cart();
-	    cart.left = (cart.left * (1.0 + s) + cart.rght * (1.0 - s)) / 2.0;
-	    cart.rght = (cart.left * (1.0 - s) + cart.rght * (1.0 + s)) / 2.0;
-	    cart.btm = (cart.btm * (1.0 + s) + cart.top * (1.0 - s)) / 2.0;
-	    cart.top = (cart.btm * (1.0 - s) + cart.top * (1.0 + s)) / 2.0;
+	    var cart = get_cart();
+	    var dx = (cart.rght - cart.left) * (1.0 - s) / 2.0;
+	    cart.left += dx;
+	    cart.rght -= dx;
+	    var dy = (cart.top - cart.btm) * (1.0 - s) / 2.0;
+	    cart.btm += dy;
+	    cart.top -= dy;
 	    set_cart(cart);
-	    children = plot.childNodes;
-	    for (c = 0; c < children.length; c++) {
-		zoom_attrs(children[c], s);
+	    for (var c = 0; c < plot.childNodes.length; c++) {
+		zoom_attrs(plot.childNodes[c], s);
 	    }
 	    update_background();
 	    update_axes();
