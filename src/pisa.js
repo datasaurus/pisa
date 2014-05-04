@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.44 $ $Date: 2014/05/02 19:10:02 $
+   .	$Revision: 1.45 $ $Date: 2014/05/04 15:43:21 $
  */
 
 /*
@@ -39,9 +39,14 @@
 
 window.addEventListener("load", function (evt)
 {
-
 	"use strict";
 	/*jslint browser:true */
+
+	/*
+	 *************************************************************
+	 ****************** Adjust these variables. ******************
+	 *************************************************************
+	 */
 
 	/* Length of an axis tick mark, pixels */
 	var tick_len = 9.0;
@@ -53,6 +58,19 @@ window.addEventListener("load", function (evt)
 	/* Links to external images for buttons */
 	var zoom_in_img = "zoom_in.svg";
 	var zoom_out_img = "zoom_out.svg";
+
+	/*
+	   If keep_margins is true, plot will resize with window to preserve
+	   margins. If false, plot will remain at prescribed size.
+	*/
+
+	var keep_margins = true;
+
+	/*
+	 *************************************************************
+	 ******* Everything below here should not change much. *******
+	 *************************************************************
+	 */
 
 	/* These objects store information about the plot elements */
 	var root = document.rootElement;
@@ -734,12 +752,14 @@ window.addEventListener("load", function (evt)
 	    update_background();
 	    update_axes();
 	}
-	this.addEventListener("resize", resize, true);
+	if ( keep_margins ) {
+	    this.addEventListener("resize", resize, true);
+	}
 
 	/*
 	   Redraw with javascript. This prevents sudden changes
-	   in the image is the static document from the awk script noticeably
-	   differs from the Javascript rendition.
+	   in the image if the static document produced by xyplot.awk
+	   noticeably differs from the Javascript rendition.
 	 */
 
 	while ( xAxis.lastChild ) {
@@ -748,7 +768,11 @@ window.addEventListener("load", function (evt)
 	while ( yAxis.lastChild ) {
 	    yAxis.removeChild(yAxis.lastChild);
 	}
-	resize.call(this, {});
+	if ( keep_margins ) {
+	    resize.call(this, {});
+	} else {
+	    update_axes();
+	}
 
 }, false);			/* Done defining load callback */
 
