@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.45 $ $Date: 2014/05/04 15:43:21 $
+   .	$Revision: 1.46 $ $Date: 2014/05/04 16:24:21 $
  */
 
 /*
@@ -623,9 +623,7 @@ window.addEventListener("load", function (evt)
 	{
 	    var x = svg_x_to_cart(evt.clientX);
 	    var y = svg_y_to_cart(evt.clientY);
-	    var txt = "Cursor: ";
-	    txt = txt + evt.clientX + " " + evt.clientY + " => ";
-	    txt = txt + to_prx(x, x_prx) + " " + to_prx(y, x_prx);
+	    var txt = "Cursor: " + to_prx(x, x_prx) + " " + to_prx(y, x_prx);
 	    cursor_loc.textContent = txt;
 	}
 
