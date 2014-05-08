@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.46 $ $Date: 2014/05/04 16:24:21 $
+   .	$Revision: 1.47 $ $Date: 2014/05/04 16:36:05 $
  */
 
 /*
@@ -79,8 +79,11 @@ window.addEventListener("load", function (evt)
 	var cartG = document.getElementById("cartG");
 	var xAxis = document.getElementById("xAxis");
 	var xAxisClip = document.getElementById("xAxisClipRect");
+	var xTitle = document.getElementById("xTitle");
 	var yAxis = document.getElementById("yAxis");
 	var yAxisClip = document.getElementById("yAxisClipRect");
+	var yTitle = document.getElementById("yTitle");
+	var yTitleXForm = document.getElementById("yTitleTransform");
 
 	/*
 	   Axis labels are allowed to extend beyond plot edge by
@@ -463,6 +466,7 @@ window.addEventListener("load", function (evt)
 	    var axisHeight;		/* Axis height, SVG coordinates */
 	    var cart;			/* Limits of plot in Cartesian
 					   coordinates */
+	    var xForm;			/* Transform to rotate y axis title */
 
 	    plotWidth = plot.width.baseVal.value;
 	    plotHeight = plot.height.baseVal.value;
@@ -473,27 +477,33 @@ window.addEventListener("load", function (evt)
 	    xAxisSVGY = plotSVGY + plotHeight;
 	    xAxis.setAttribute("y", xAxisSVGY);
 	    axisWidth = plotWidth + xOverHang;
+	    axisHeight = xAxis.viewBox.baseVal.height;
 	    xAxis.setAttribute("width", axisWidth);
 	    xAxisClip.setAttribute("y", xAxisSVGY);
 	    xAxisClip.setAttribute("width", axisWidth);
 	    viewBox = xAxisSVGX;
 	    viewBox += " " + xAxisSVGY;
 	    viewBox += " " + axisWidth;
-	    viewBox += " " + xAxis.viewBox.baseVal.height;
+	    viewBox += " " + axisHeight;
 	    xAxis.setAttribute("viewBox", viewBox);
+	    xTitle.setAttribute("x", xAxisSVGX + axisWidth / 2.0);
+	    xTitle.setAttribute("y", xAxisSVGY + axisHeight);
 
 	    /* Create new labels for x axis */
 	    mk_labels(cart.left, cart.rght, apply_x_coords, plotWidth / 4);
 
 	    /* Restore y axis position and update viewBox */
 	    yAxis.setAttribute("y", yAxisSVGY);
+	    axisWidth = yAxis.viewBox.baseVal.width;
 	    axisHeight = plotHeight + yOverHang;
 	    yAxis.setAttribute("height", axisHeight);
 	    viewBox = yAxis.viewBox.baseVal.x;
 	    viewBox += " " + yAxisSVGY;
-	    viewBox += " " + yAxis.viewBox.baseVal.width;
+	    viewBox += " " + axisWidth;
 	    viewBox += " " + axisHeight;
 	    yAxis.setAttribute("viewBox", viewBox);
+	    xForm = yTitleXForm.transform.baseVal.getItem(0).matrix;
+	    xForm.f = yAxisSVGY + axisHeight / 2.0;
 
 	    /* Create new labels for y axis */
 	    mk_labels(cart.btm, cart.top, apply_y_coords, plotHeight / 4);

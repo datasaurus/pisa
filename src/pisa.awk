@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.40 $ $Date: 2014/05/08 21:40:58 $
+# $Revision: 1.41 $ $Date: 2014/05/08 21:51:42 $
 #
 ################################################################################
 
@@ -635,11 +635,10 @@ function print_header()
     printf "\n";
     if ( x_title_ht > 0.0 ) {
 	printf "<text\n";
-	printf "    id=\"x_title\"\n";
+	printf "    id=\"xTitle\"\n";
 	printf "    x=\"%f\"\n", x_axis_x_px + x_axis_width_px / 2.0;
 	printf "    y=\"%f\"\n", x_axis_y_px + x_axis_height_px;
 	printf "    font-size=\"%.1f\"\n", font_sz;
-	printf "    dominant-baseline=\"hanging\"\n";
 	printf "    text-anchor=\"middle\">";
 	printf "%s", x_title;
 	printf "</text>\n";
@@ -682,12 +681,14 @@ function print_header()
     if ( y_title_ht > 0.0 ) {
 	x = y_axis_x_px + y_axis_width_px - font_sz * (max_len + 0.5);
 	y = y_axis_y_px + y_axis_height_px / 2.0;
-	printf "<g transform=\"matrix(0.0, -1.0, 1.0, 0.0, %.1f, %.1f)\">\n",
+	printf "<g\n";
+	printf "    id=\"yTitleTransform\"\n";
+	printf "    transform=\"matrix(0.0, -1.0, 1.0, 0.0, %.1f, %.1f)\">\n",
 	       x, y;
 	printf "<text\n";
-	printf "    id=\"y_title\"\n";
-	printf "    x=\"0.0\"\n", x;
-	printf "    y=\"0.0\"", y;
+	printf "    id=\"yTitle\"\n";
+	printf "    x=\"0.0\"\n";
+	printf "    y=\"0.0\"";
 	printf "    font-size=\"%.1f\"\n", font_sz;
 	printf "    text-anchor=\"middle\">";
 	printf "%s", y_title;
