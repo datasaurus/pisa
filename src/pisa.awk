@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.41 $ $Date: 2014/05/08 21:51:42 $
+# $Revision: 1.42 $ $Date: 2014/05/08 22:21:09 $
 #
 ################################################################################
 
@@ -76,8 +76,8 @@
 #	font_sz		font size for labels, in pixels.
 #	x_prx		number of significant figures in x axis labels.
 #	y_prx		number of significant figures in y axis labels.
-#	x_title		(optional) x axis label
-#	y_title		(optional) y axis label
+#	x_title		(optional) x axis label. Cannot contain "=".
+#	y_title		(optional) y axis label. Cannot contain "=".
 #	start_doc	(optional) indicates no more parameters. The process
 #			will now just pass input to output. Subsequent input
 #			should be SVG code for items under the plot. Coordinates
