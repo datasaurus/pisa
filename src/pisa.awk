@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.37 $ $Date: 2014/05/08 17:11:50 $
+# $Revision: 1.38 $ $Date: 2014/05/08 18:17:31 $
 #
 ################################################################################
 
@@ -69,12 +69,10 @@
 #			If absent, document height will be set so that ratio of
 #			plot width to plot height in pixels equals ratio of plot
 #			width to plot height in Cartesian coordinates.
-#	top		size of the area above the plot, in pixels.
-#	right		size of the area right of the plot, in pixels.
-#	bottom		size of the area below the plot, in pixels.
-#	left		size of the area left of the plot, in pixels.
-#			Plot width will be doc_width - left - right.
-#			Plot height will be doc_height - top - bottom.
+#	top		size of the margin above the plot, in pixels.
+#	right		size of the margin right of the plot, in pixels.
+#	bottom		size of the margin below the plot, in pixels.
+#	left		size of the margin left of the plot, in pixels.
 #	font_sz		font size for labels, in pixels.
 #	x_prx		number of significant figures in x axis labels.
 #	y_prx		number of significant figures in y axis labels.
@@ -375,6 +373,8 @@ function print_header()
 	printf "Top and bottom cannot have same y coordinate.\n" > err;
 	exit 1;
     }
+
+#   Determine space requirements for axis titles
     if ( length(x_title) > 0 ) {
 	x_title_ht = 2.0 * font_sz;
     } else {
@@ -382,30 +382,92 @@ function print_header()
     }
     if ( length(y_title) > 0 ) {
 	y_title_ht = 2.0 * font_sz;
-	left += y_title_ht;
     } else {
 	y_title_ht = 0.0;
     }
-    plot_w_px = doc_width - left - right - y_title_ht;
-    if ( plot_w_px <= 0 ) {
-	printf "plot_w_px = doc_width - left_margin - right_margin" > err;
-	printf " = %f - %f - %f,", doc_width, left_margin, right_margin > err;
-	printf " must be positive.\n" > err;
+    bottom += x_title_ht;
+
+#   Compute plot width and height
+    plot_x_px = left;
+    plot_width_px = doc_width - left - right;
+    if ( plot_width_px <= 0 ) {
+	printf "Negative plot width.\n" > err;
 	exit 1;
     }
     if ( doc_height == "nan" ) {
-	plot_h_px = plot_w_px * fabs((y_top - y_btm) / (x_rght - x_left));
-	doc_height = plot_h_px + top + bottom + x_title_ht;
+	r = fabs((y_top - y_btm) / (x_rght - x_left));
+	plot_height_px = plot_width_px * r;
     } else {
-	plot_h_px = doc_height - top - bottom - y_title_ht;
-	if ( plot_h_px <= 0 ) {
-	    printf "plot_h_px = " > err;
-	    printf " document_height - top_margin - bottom_margin" > err;
-	    printf " = %f - %f - %f,", doc_height, top, bottom > err;
-	    printf " must be positive.\n" > err;
+	plot_height_px = doc_height - top - bottom;
+	if ( plot_height_px <= 0 ) {
+	    printf "Negative plot height.\n" > err;
 	    exit 1;
 	}
     }
+
+#   Create a first guess set of labels for the y axis. From this set, determine
+#   width needed for y axis labels, tick marks, and title.
+    px_per_m = plot_height_px / (y_top - y_btm);
+    n_max = plot_height_px / font_sz / 2;
+    axis_lbl(y_btm, y_top, y_prx, n_max, "v", y_labels);
+    max_len = 0.0;
+    for (y in y_labels) {
+	len = length(y_labels[y]);
+	if ( len > max_len ) {
+	    max_len = len;
+	}
+    }
+    y_axis_y_px = top - font_sz;
+    y_axis_width_px = font_sz * (max_len + 0.5) + y_title_ht;
+    y_axis_x_px = left;
+
+#   Adjust left margin so that it includes user specified margin plus space
+#   needed for y axis element. Recompute plot width and height for the new
+#   left margin. Recompute labels for the new plot height. Assume, perhaps
+#   naively, that space needs for the y axis do not change. This could be a bug.
+    plot_x_px = left + y_axis_width_px;
+    plot_width_px = doc_width - plot_x_px - right;
+    if ( plot_width_px <= 0 ) {
+	printf "Negative plot width.\n" > err;
+	exit 1;
+    }
+    if ( doc_height == "nan" ) {
+	r = fabs((y_top - y_btm) / (x_rght - x_left));
+	plot_height_px = plot_width_px * r;
+	doc_height = plot_height_px + top + bottom;
+    } else {
+	plot_height_px = doc_height - top - bottom;
+	if ( plot_height_px <= 0 ) {
+	    printf "Negative plot height.\n" > err;
+	    exit 1;
+	}
+    }
+    y_axis_height_px = plot_height_px + 3.0 * font_sz;
+    px_per_m = plot_height_px / (y_top - y_btm);
+    n_max = plot_height_px / font_sz / 2;
+    axis_lbl(y_btm, y_top, y_prx, n_max, "v", y_labels);
+
+#   Compute geometry for x axis.
+    x_axis_x_px = plot_x_px - 4.0 * font_sz;
+    x_axis_y_px = top + plot_height_px;
+    x_axis_width_px = plot_width_px + 8.0 * font_sz;
+    x_axis_height_px = 3 * font_sz;
+
+#   Create a set of labels for the x axis;
+    px_per_m = plot_width_px / (x_rght - x_left);
+    n_max = plot_width_px / font_sz / 2;
+    axis_lbl(x_left, x_rght, x_prx, n_max, "h", x_labels);
+
+#   Compute transform matrix for plot area
+#        X_svg = a * x + e
+#        Y_svg = d * y + f
+#   Ref: http://www.w3.org/TR/SVG11/coords.html#TransformMatrixDefined
+    a = plot_width_px / (x_rght - x_left);
+    c = 0.0;
+    e = -plot_width_px * x_left / (x_rght - x_left);
+    b = 0.0;
+    d = -plot_height_px / (y_top - y_btm);
+    f = plot_height_px * y_top / (y_top - y_btm);
 
 #   Initialize the SVG document
     printf "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
@@ -413,7 +475,7 @@ function print_header()
 	printf "<?xml-stylesheet href=\"%s\" type=\"text/css\"?>\n", sheet[s];
     }
     printf "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\"\n";
-    printf "    \"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n";
+    printf "   \"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\n";
     printf "<svg\n";
     printf "    width=\"%f\"\n", doc_width;
     printf "    height=\"%f\"\n", doc_height;
@@ -448,8 +510,8 @@ function print_header()
     printf "       document coordinates. -->\n";
     printf "  <rect\n";
     printf "      id=\"PlotRect\"\n";
-    printf "      width=\"%f\"\n", plot_w_px;
-    printf "      height=\"%f\" />\n", plot_h_px;
+    printf "      width=\"%f\"\n", plot_width_px;
+    printf "      height=\"%f\" />\n", plot_height_px;
     printf "</defs>\n";
 
 #   Define plot area clip path
@@ -458,63 +520,44 @@ function print_header()
     printf "  <clipPath id=\"PlotArea\">\n";
     printf "    <use\n";
     printf "        xlink:href=\"#PlotRect\"\n";
-    printf "        x=\"%f\"\n", left;
+    printf "        x=\"%f\"\n", plot_x_px;
     printf "        y=\"%f\" />\n", top;
     printf "  </clipPath>\n";
 
 #   X axis geometry and clip path.
-    x_axis_left = left - 4.0 * font_sz;
-    x_axis_top = top + plot_h_px;
-    x_axis_width = plot_w_px + 8.0 * font_sz;
-    x_axis_height = 3 * font_sz;
     printf "  <!-- Clip path for x axis labels -->\n";
     printf "  <clipPath>\n";
     printf "    id=\"xAxisClip\"\n";
     printf "    <rect\n";
     printf "        id=\"xAxisClipRect\"\n";
-    printf "        x=\"%f\"\n", x_axis_left;
-    printf "        y=\"%f\"\n", x_axis_top;
-    printf "        width=\"%f\"\n", x_axis_width;
-    printf "        height=\"%f\"/>\n", x_axis_height;
+    printf "        x=\"%f\"\n", x_axis_x_px;
+    printf "        y=\"%f\"\n", x_axis_y_px;
+    printf "        width=\"%f\"\n", x_axis_width_px;
+    printf "        height=\"%f\"/>\n", x_axis_height_px;
     printf "  </clipPath>\n";
 
 #   Y axis geometry and clip path.
-    y_axis_left = left - 9.0 * font_sz;
-    y_axis_top = top - font_sz;
-    y_axis_width = 9.0 * font_sz;
-    y_axis_height = plot_h_px + 3.0 * font_sz;
     printf "  <!-- Clip path for y axis labels -->\n";
     printf "  <clipPath>\n";
     printf "    id=\"yAxisClip\">\n";
     printf "    <rect\n";
     printf "        id=\"yAxisClipRect\"\n";
-    printf "        x=\"%f\"\n", y_axis_left;
-    printf "        y=\"%f\"\n", y_axis_top;
-    printf "        width=\"%f\"\n", y_axis_width;
-    printf "        height=\"%f\" />\n", y_axis_height;
+    printf "        x=\"%f\"\n", y_axis_x_px;
+    printf "        y=\"%f\"\n", y_axis_y_px;
+    printf "        width=\"%f\"\n", y_axis_width_px;
+    printf "        height=\"%f\" />\n", y_axis_height_px;
     printf "  </clipPath>\n";
     printf "</defs>\n";
-
-#   Compute transform matrix for plot area
-#   .    X_svg = a * x + e
-#   .    Y_svg = d * y + f
-#   Ref: http://www.w3.org/TR/SVG11/coords.html#TransformMatrixDefined
-    a = plot_w_px / (x_rght - x_left);
-    c = 0.0;
-    e = -plot_w_px * x_left / (x_rght - x_left);
-    b = 0.0;
-    d = -plot_h_px / (y_top - y_btm);
-    f = plot_h_px * y_top / (y_top - y_btm);
 
 #   Create plot area.
     printf "<!-- Clip path and SVG element for plot area -->\n";
     printf "<g clip-path=\"url(#PlotArea)\">\n";
     printf "  <svg\n";
     printf "      id=\"plot\"\n";
-    printf "      x=\"%f\"\n", left;
+    printf "      x=\"%f\"\n", plot_x_px;
     printf "      y=\"%f\"\n", top;
-    printf "      width=\"%f\"\n", plot_w_px;
-    printf "      height=\"%f\">\n", plot_h_px;
+    printf "      width=\"%f\"\n", plot_width_px;
+    printf "      height=\"%f\">\n", plot_height_px;
     printf "\n";
     printf "<!-- Set user space for Cartesian coordinates -->\n";
     printf "<g id=\"cartG\" transform=\"matrix(%f %f %f %f %f %f)\">\n", \
@@ -550,7 +593,7 @@ function print_header()
     printf "<!-- Draw boundary around plot area -->\n";
     printf "<use\n";
     printf "    xlink:href=\"#PlotRect\"\n";
-    printf "    x=\"%f\"\n", left;
+    printf "    x=\"%f\"\n", plot_x_px;
     printf "    y=\"%f\"\n", top;
     printf "    fill=\"none\"\n";
     printf "    stroke=\"black\">\n";
@@ -558,96 +601,87 @@ function print_header()
     printf "\n";
 
 #   Draw and label x axis
-    px_per_m = plot_w_px / (x_rght - x_left);
-    n_max = plot_w_px / font_sz / 2;
-    axis_lbl(x_left, x_rght, x_prx, n_max, "h", labels);
     printf "<!-- Clip area and svg element for x axis and labels -->\n";
     printf "<g clip-path=\"url(#xAxisClip)\">\n";
     printf "  <svg\n";
     printf "      id=\"xAxis\"\n";
-    printf "      x=\"%f\"\n", x_axis_left;
-    printf "      y=\"%f\"\n", x_axis_top;
-    printf "      width=\"%f\"\n", x_axis_width;
-    printf "      height=\"%f\"\n", x_axis_height;
+    printf "      x=\"%f\"\n", x_axis_x_px;
+    printf "      y=\"%f\"\n", x_axis_y_px;
+    printf "      width=\"%f\"\n", x_axis_width_px;
+    printf "      height=\"%f\"\n", x_axis_height_px;
     printf "      viewBox=\"%f %f %f %f\" >\n",
-	   x_axis_left, x_axis_top, x_axis_width, x_axis_height;
-    for (x in labels) {
-	x_px = left + (x - x_left) * px_per_m;
+	   x_axis_x_px, x_axis_y_px, x_axis_width_px, x_axis_height_px;
+    for (x in x_labels) {
+	x_px = plot_x_px + (x - x_left) * px_per_m;
 	printf "  <line\n";
 	printf "      x1=\"%f\"\n", x_px;
 	printf "      x2=\"%f\"\n", x_px;
-	printf "      y1=\"%f\"\n", top + plot_h_px;
-	printf "      y2=\"%f\"\n", top + plot_h_px + 0.5 * font_sz;
+	printf "      y1=\"%f\"\n", top + plot_height_px;
+	printf "      y2=\"%f\"\n", top + plot_height_px + 0.5 * font_sz;
 	printf "      stroke=\"black\"\n"
 	printf "      stroke-width=\"1\" />\n"
 	printf "  <text\n";
 	printf "      class=\"x axis label\"\n";
 	printf "      x=\"%f\"\n", x_px;
-	printf "      y=\"%f\"\n", top + plot_h_px + 1.5 * font_sz;
+	printf "      y=\"%f\"\n", top + plot_height_px + 1.5 * font_sz;
 	printf "      font-size=\"%.1f\"\n", font_sz;
 	printf "      text-anchor=\"middle\"\n";
 	printf "      dominant-baseline=\"hanging\">";
-	printf "%s", labels[x];
+	printf "%s", x_labels[x];
 	printf "</text>\n";
     }
     printf "  </svg>\n";
     printf "</g>\n";
     printf "\n";
     if ( x_title_ht > 0.0 ) {
+	x = x_axis_x_px + x_axis_width_px / 2.0;
+	y = x_axis_y_px + x_axis_height_px + font_sz;
 	printf "<text id=\"x_title\" x=\"%f\" y=\"%f\" font-size=\"%.1f\"",
-	       x_axis_left + x_axis_width / 2.0,
-	       x_axis_top + x_axis_height + 2.0 * font_sz, font_sz;
-	printf " text-anchor=\"middle\">";
+	       x, y, font_sz;
+	printf " dominant-baseline=\"hanging\" text-anchor=\"middle\">";
 	printf "%s", x_title;
 	printf "</text>\n";
     }
 
 #   Draw and label y axis
-    px_per_m = plot_h_px / (y_top - y_btm);
-    n_max = plot_h_px / font_sz / 2;
-    axis_lbl(y_btm, y_top, y_prx, n_max, "v", labels);
     printf "<!-- Clip area and svg element for y axis and labels -->\n";
     printf "<g\n";
     printf "    clip-path=\"url(#yAxisClip)\">\n";
     printf "  <svg\n";
     printf "	id=\"yAxis\"\n";
-    printf "    x=\"%f\"\n", y_axis_left;
-    printf "    y=\"%f\"\n", y_axis_top;
-    printf "    width=\"%f\"\n", y_axis_width;
-    printf "    height=\"%f\"\n", y_axis_height;
+    printf "    x=\"%f\"\n", y_axis_x_px;
+    printf "    y=\"%f\"\n", y_axis_y_px;
+    printf "    width=\"%f\"\n", y_axis_width_px;
+    printf "    height=\"%f\"\n", y_axis_height_px;
     printf "	viewBox=\"%f %f %f %f\">\n",
-	   y_axis_left, y_axis_top, y_axis_width, y_axis_height;
-    max_len = 0.0;
-    for (y in labels) {
+	   y_axis_x_px, y_axis_y_px, y_axis_width_px, y_axis_height_px;
+    for (y in y_labels) {
 	y_px = top + (y_top - y) * px_per_m;
 	printf "  <line\n";
-	printf "      x1=\"%f\"\n", left - 0.5 * font_sz;
-	printf "      x2=\"%f\"\n", left;
+	printf "      x1=\"%f\"\n", plot_x_px - 0.5 * font_sz;
+	printf "      x2=\"%f\"\n", plot_x_px;
 	printf "      y1=\"%f\"\n", y_px;
 	printf "      y2=\"%f\"\n", y_px;
 	printf "      stroke=\"black\"\n"
 	printf "      stroke-width=\"1\" />\n"
 	printf "  <text\n";
 	printf "      class=\"y axis label\"\n";
-	printf "      x=\"%f\"\n", left - font_sz;
+	printf "      x=\"%f\"\n", plot_x_px - font_sz;
 	printf "      y=\"%f\"\n", y_px;
 	printf "      font-size=\"%.1f\"\n", font_sz;
 	printf "      text-anchor=\"end\"\n";
 	printf "      dominant-baseline=\"mathematical\">";
-	printf "%s", labels[y];
+	printf "%s", y_labels[y];
 	printf "</text>\n";
-	len = length(labels[y]);
-	if ( len > max_len ) {
-	    max_len = len;
-	}
     }
     printf "  </svg>\n";
     printf "</g>\n";
     printf "\n";
     if ( y_title_ht > 0.0 ) {
+	x = y_axis_x_px + y_axis_width_px - font_sz * (max_len + 0.5);
+	y = y_axis_y_px + y_axis_height_px / 2.0;
 	printf "<g transform=\"matrix(0.0, -1.0, 1.0, 0.0, %.1f, %.1f)\">\n",
-	       y_axis_left + y_axis_width - font_sz * (max_len + 0.5),
-	       y_axis_top + y_axis_height / 2.0;
+	       x, y;
 	printf " <text id=\"y_title\" x=\"0.0\" y=\"0.0\"";
 	printf " font-size=\"%.1f\" text-anchor=\"middle\">", font_sz;
 	printf "%s", y_title;
