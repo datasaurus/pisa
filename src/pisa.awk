@@ -31,53 +31,71 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.35 $ $Date: 2014/04/23 21:09:03 $
+# $Revision: 1.36 $ $Date: 2014/05/02 19:10:02 $
 #
 ################################################################################
 
 # Standard input must include:
 #
-#	x_left plot_coord
-#	x_rght plot_coord
-#	y_btm plot_coord
-#	y_top plot_coord
-#	doc_width pixels
-#	top pixels
-#	right pixels
-#	bottom pixels
-#	left pixels
-#	font_sz size
+#	x_left number
+#	x_rght number
+#	y_btm number
+#	y_top number
+#	doc_width number
+#	top number
+#	right number
+#	bottom number
+#	left number
+#	font_sz number
 #	start_plot
 #	end_plot
 #	end
 #
 # Standard input may also include:
 #
-#	doc_height pixels
+#	doc_height number
+#	x_title string
+#	y_title string
+#	start_doc
 #
 # where:
 #	
-#	x_left		Cartesian x coordinate of left edge of plot
-#	x_rght		Cartesian x coordinate of right edge of plot
-#	y_btm		Cartesian y coordinate of bottom edge of plot
-#	y_top		Cartesian y coordinate of top edge of plot
-#	doc_width	document width in display units (pixels).
-#	doc_height	(optional) plot height, in display units (pixels).
-#	top		size of the area above the plot, in display units
-#	right		size of the area right of the plot, in display units
-#	bottom		size of the area below the plot, in display units
-#	left		size of the area left of the plot, in display units
-#			Document width will be left + doc_width + right
-#			Document height will be top + doc_height + bottom
-#	font_sz		font size for labels, in display units
-#	x_prx		number of significant figures in x axis labels
-#	y_prx		number of significant figures in y axis labels
-#	start_plot	tells the process to just pass input to output.
-#			Input should be SVG code for items in the plot.
-#	end_plot	indicates no more plot input. The process prints
-#			SVG code to finish the plot. Then it resumes
-#			passing input to output, allowing additional
-#			SVG elements.
+#	x_left		Cartesian x coordinate of left edge of plot.
+#	x_rght		Cartesian x coordinate of right edge of plot.
+#	y_btm		Cartesian y coordinate of bottom edge of plot.
+#	y_top		Cartesian y coordinate of top edge of plot.
+#	doc_width	document width in pixels.
+#	doc_height	(optional) document height, in pixels.
+#			If absent, document height will be set so that ratio of
+#			plot width to plot height in pixels equals ratio of plot
+#			width to plot height in Cartesian coordinates.
+#	top		size of the area above the plot, in pixels.
+#	right		size of the area right of the plot, in pixels.
+#	bottom		size of the area below the plot, in pixels.
+#	left		size of the area left of the plot, in pixels.
+#			Plot width will be doc_width - left - right.
+#			Plot height will be doc_height - top - bottom.
+#	font_sz		font size for labels, in pixels.
+#	x_prx		number of significant figures in x axis labels.
+#	y_prx		number of significant figures in y axis labels.
+#	x_title		(optional) x axis label
+#	y_title		(optional) y axis label
+#	start_doc	(optional) indicates no more parameters. The process
+#			will now just pass input to output. Subsequent input
+#			should be SVG code for items under the plot. Coordinates
+#			for these items must be in pixels.
+#	start_plot	indicates no more parameters. The process will print
+#			SVG code setting up the Cartesian coordinate system and
+#			then continue passing input to output. Subsequent input
+#			should be SVG code for items in the plot. Coordinates
+#			for these items must be Cartesian.
+#	end_plot	indicates no more plot input. The process prints SVG
+#			code to terminate transformation to Cartesian
+#			coordinates and then it finishes plot. Then it resumes
+#			passing input to output, allowing additional SVG
+#			elements on top of the plot. Coordinates for these
+#			additional elements, e.g. extra labels, color tables,
+#			markers, etc. must be pixels.
 #	end		indicates no more input. The process prints
 #			SVG code to finish the document, and exits.
 #
@@ -102,6 +120,8 @@ BEGIN {
     y_top = "nan";
     x_prx = "3";
     y_prx = "3";
+    x_title = "";
+    y_title = "";
     font_size = 12.0;
     err = "/dev/stderr";
 }
@@ -174,6 +194,12 @@ BEGIN {
 	printf "font size must be positive\n" > err;
 	exit 1;
     }
+}
+/^\s*x_title\s*=/ {
+    x_title = $2;
+}
+/^\s*y_title\s*=/ {
+    y_title = "$2";
 }
 /^\s*x_prx\s*=\s*[0-9.Ee-]+\s*$/ {
     x_prx = $2;
@@ -349,7 +375,9 @@ function print_header()
 	printf "Top and bottom cannot have same y coordinate.\n" > err;
 	exit 1;
     }
-    plot_w_px = doc_width - left - right;
+    x_title_ht = ( length(x_title) > 0 ) ? 2.0 * font_sz : 0.0;
+    y_title_ht = ( length(y_title) > 0 ) ?  2.0 * font_sz : 0.0;
+    plot_w_px = doc_width - left - right - y_title_ht;
     if ( plot_w_px <= 0 ) {
 	printf "plot_w_px = doc_width - left_margin - right_margin" > err;
 	printf " = %f - %f - %f,", doc_width, left_margin, right_margin > err;
@@ -358,9 +386,9 @@ function print_header()
     }
     if ( doc_height == "nan" ) {
 	plot_h_px = plot_w_px * fabs((y_top - y_btm) / (x_rght - x_left));
-	doc_height = plot_h_px + top + bottom;
+	doc_height = plot_h_px + top + bottom + x_title_ht;
     } else {
-	plot_h_px = doc_height - top - bottom;
+	plot_h_px = doc_height - top - bottom - y_title_ht;
 	if ( plot_h_px <= 0 ) {
 	    printf "plot_h_px = " > err;
 	    printf " document_height - top_margin - bottom_margin" > err;
@@ -556,6 +584,14 @@ function print_header()
     printf "  </svg>\n";
     printf "</g>\n";
     printf "\n";
+    if ( x_title_ht > 0.0 ) {
+	printf "<text x=\"%f\" y=\"%f\" font-size=\"%.1f\"",
+	       x_axis_left + x_axis_width / 2.0,
+	       x_axis_top + x_axis_height + 2.0 * font_sz, font_sz;
+	printf " text-anchor=\"middle\">";
+	printf "%s", x_title;
+	printf "</text>\n";
+    }
 
 #   Draw and label y axis
     px_per_m = plot_h_px / (y_top - y_btm);
