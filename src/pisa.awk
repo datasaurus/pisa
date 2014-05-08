@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.38 $ $Date: 2014/05/08 18:17:31 $
+# $Revision: 1.39 $ $Date: 2014/05/08 20:59:43 $
 #
 ################################################################################
 
@@ -407,7 +407,7 @@ function print_header()
 
 #   Create a first guess set of labels for the y axis. From this set, determine
 #   width needed for y axis labels, tick marks, and title.
-    px_per_m = plot_height_px / (y_top - y_btm);
+    px_per_y = plot_height_px / (y_top - y_btm);
     n_max = plot_height_px / font_sz / 2;
     axis_lbl(y_btm, y_top, y_prx, n_max, "v", y_labels);
     max_len = 0.0;
@@ -443,7 +443,7 @@ function print_header()
 	}
     }
     y_axis_height_px = plot_height_px + 3.0 * font_sz;
-    px_per_m = plot_height_px / (y_top - y_btm);
+    px_per_y = plot_height_px / (y_top - y_btm);
     n_max = plot_height_px / font_sz / 2;
     axis_lbl(y_btm, y_top, y_prx, n_max, "v", y_labels);
 
@@ -454,7 +454,7 @@ function print_header()
     x_axis_height_px = 3 * font_sz;
 
 #   Create a set of labels for the x axis;
-    px_per_m = plot_width_px / (x_rght - x_left);
+    px_per_x = plot_width_px / (x_rght - x_left);
     n_max = plot_width_px / font_sz / 2;
     axis_lbl(x_left, x_rght, x_prx, n_max, "h", x_labels);
 
@@ -612,7 +612,7 @@ function print_header()
     printf "      viewBox=\"%f %f %f %f\" >\n",
 	   x_axis_x_px, x_axis_y_px, x_axis_width_px, x_axis_height_px;
     for (x in x_labels) {
-	x_px = plot_x_px + (x - x_left) * px_per_m;
+	x_px = plot_x_px + (x - x_left) * px_per_x;
 	printf "  <line\n";
 	printf "      x1=\"%f\"\n", x_px;
 	printf "      x2=\"%f\"\n", x_px;
@@ -635,7 +635,7 @@ function print_header()
     printf "\n";
     if ( x_title_ht > 0.0 ) {
 	x = x_axis_x_px + x_axis_width_px / 2.0;
-	y = x_axis_y_px + x_axis_height_px + font_sz;
+	y = x_axis_y_px + x_axis_height_px;
 	printf "<text id=\"x_title\" x=\"%f\" y=\"%f\" font-size=\"%.1f\"",
 	       x, y, font_sz;
 	printf " dominant-baseline=\"hanging\" text-anchor=\"middle\">";
@@ -656,7 +656,7 @@ function print_header()
     printf "	viewBox=\"%f %f %f %f\">\n",
 	   y_axis_x_px, y_axis_y_px, y_axis_width_px, y_axis_height_px;
     for (y in y_labels) {
-	y_px = top + (y_top - y) * px_per_m;
+	y_px = top + (y_top - y) * px_per_y;
 	printf "  <line\n";
 	printf "      x1=\"%f\"\n", plot_x_px - 0.5 * font_sz;
 	printf "      x2=\"%f\"\n", plot_x_px;
