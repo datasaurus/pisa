@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.36 $ $Date: 2014/05/02 19:10:02 $
+# $Revision: 1.37 $ $Date: 2014/05/08 17:11:50 $
 #
 ################################################################################
 
@@ -199,7 +199,7 @@ BEGIN {
     x_title = $2;
 }
 /^\s*y_title\s*=/ {
-    y_title = "$2";
+    y_title = $2;
 }
 /^\s*x_prx\s*=\s*[0-9.Ee-]+\s*$/ {
     x_prx = $2;
@@ -375,8 +375,17 @@ function print_header()
 	printf "Top and bottom cannot have same y coordinate.\n" > err;
 	exit 1;
     }
-    x_title_ht = ( length(x_title) > 0 ) ? 2.0 * font_sz : 0.0;
-    y_title_ht = ( length(y_title) > 0 ) ?  2.0 * font_sz : 0.0;
+    if ( length(x_title) > 0 ) {
+	x_title_ht = 2.0 * font_sz;
+    } else {
+	x_title_ht = 0.0;
+    }
+    if ( length(y_title) > 0 ) {
+	y_title_ht = 2.0 * font_sz;
+	left += y_title_ht;
+    } else {
+	y_title_ht = 0.0;
+    }
     plot_w_px = doc_width - left - right - y_title_ht;
     if ( plot_w_px <= 0 ) {
 	printf "plot_w_px = doc_width - left_margin - right_margin" > err;
@@ -585,7 +594,7 @@ function print_header()
     printf "</g>\n";
     printf "\n";
     if ( x_title_ht > 0.0 ) {
-	printf "<text x=\"%f\" y=\"%f\" font-size=\"%.1f\"",
+	printf "<text id=\"x_title\" x=\"%f\" y=\"%f\" font-size=\"%.1f\"",
 	       x_axis_left + x_axis_width / 2.0,
 	       x_axis_top + x_axis_height + 2.0 * font_sz, font_sz;
 	printf " text-anchor=\"middle\">";
@@ -608,6 +617,7 @@ function print_header()
     printf "    height=\"%f\"\n", y_axis_height;
     printf "	viewBox=\"%f %f %f %f\">\n",
 	   y_axis_left, y_axis_top, y_axis_width, y_axis_height;
+    max_len = 0.0;
     for (y in labels) {
 	y_px = top + (y_top - y) * px_per_m;
 	printf "  <line\n";
@@ -627,10 +637,22 @@ function print_header()
 	printf "%s", labels[y];
 	printf "</text>\n";
 	len = length(labels[y]);
+	if ( len > max_len ) {
+	    max_len = len;
+	}
     }
     printf "  </svg>\n";
     printf "</g>\n";
     printf "\n";
+    if ( y_title_ht > 0.0 ) {
+	printf "<g transform=\"matrix(0.0, -1.0, 1.0, 0.0, %.1f, %.1f)\">\n",
+	       y_axis_left + y_axis_width - font_sz * (max_len + 0.5),
+	       y_axis_top + y_axis_height / 2.0;
+	printf " <text id=\"y_title\" x=\"0.0\" y=\"0.0\"";
+	printf " font-size=\"%.1f\" text-anchor=\"middle\">", font_sz;
+	printf "%s", y_title;
+	printf "</text>\n</g>\n";
+    }
 
     $0 = "";
 
