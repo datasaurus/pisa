@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.39 $ $Date: 2014/05/08 20:59:43 $
+# $Revision: 1.40 $ $Date: 2014/05/08 21:40:58 $
 #
 ################################################################################
 
@@ -634,11 +634,13 @@ function print_header()
     printf "</g>\n";
     printf "\n";
     if ( x_title_ht > 0.0 ) {
-	x = x_axis_x_px + x_axis_width_px / 2.0;
-	y = x_axis_y_px + x_axis_height_px;
-	printf "<text id=\"x_title\" x=\"%f\" y=\"%f\" font-size=\"%.1f\"",
-	       x, y, font_sz;
-	printf " dominant-baseline=\"hanging\" text-anchor=\"middle\">";
+	printf "<text\n";
+	printf "    id=\"x_title\"\n";
+	printf "    x=\"%f\"\n", x_axis_x_px + x_axis_width_px / 2.0;
+	printf "    y=\"%f\"\n", x_axis_y_px + x_axis_height_px;
+	printf "    font-size=\"%.1f\"\n", font_sz;
+	printf "    dominant-baseline=\"hanging\"\n";
+	printf "    text-anchor=\"middle\">";
 	printf "%s", x_title;
 	printf "</text>\n";
     }
@@ -648,12 +650,12 @@ function print_header()
     printf "<g\n";
     printf "    clip-path=\"url(#yAxisClip)\">\n";
     printf "  <svg\n";
-    printf "	id=\"yAxis\"\n";
+    printf "    id=\"yAxis\"\n";
     printf "    x=\"%f\"\n", y_axis_x_px;
     printf "    y=\"%f\"\n", y_axis_y_px;
     printf "    width=\"%f\"\n", y_axis_width_px;
     printf "    height=\"%f\"\n", y_axis_height_px;
-    printf "	viewBox=\"%f %f %f %f\">\n",
+    printf "    viewBox=\"%f %f %f %f\">\n",
 	   y_axis_x_px, y_axis_y_px, y_axis_width_px, y_axis_height_px;
     for (y in y_labels) {
 	y_px = top + (y_top - y) * px_per_y;
@@ -682,8 +684,12 @@ function print_header()
 	y = y_axis_y_px + y_axis_height_px / 2.0;
 	printf "<g transform=\"matrix(0.0, -1.0, 1.0, 0.0, %.1f, %.1f)\">\n",
 	       x, y;
-	printf " <text id=\"y_title\" x=\"0.0\" y=\"0.0\"";
-	printf " font-size=\"%.1f\" text-anchor=\"middle\">", font_sz;
+	printf "<text\n";
+	printf "    id=\"y_title\"\n";
+	printf "    x=\"0.0\"\n", x;
+	printf "    y=\"0.0\"", y;
+	printf "    font-size=\"%.1f\"\n", font_sz;
+	printf "    text-anchor=\"middle\">";
 	printf "%s", y_title;
 	printf "</text>\n</g>\n";
     }
