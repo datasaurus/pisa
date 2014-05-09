@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.48 $ $Date: 2014/05/08 22:21:09 $
+   .	$Revision: 1.49 $ $Date: 2014/05/09 16:25:55 $
  */
 
 /*
@@ -626,8 +626,9 @@ window.addEventListener("load", function (evt)
 	 */
 
 	var cursor_loc = document.createElementNS(svgNs, "text");
-	cursor_loc.setAttribute("x", "12");
-	cursor_loc.setAttribute("y", "48");
+	cursor_loc.setAttribute("x", "54");
+	cursor_loc.setAttribute("y", "0");
+	cursor_loc.setAttribute("dominant-baseline", "hanging");
 	cursor_loc.textContent = "x y";
 	root.appendChild(cursor_loc);
 
