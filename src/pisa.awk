@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.43 $ $Date: 2014/05/08 22:34:45 $
+# $Revision: 1.44 $ $Date: 2014/05/09 18:57:15 $
 #
 ################################################################################
 
@@ -618,6 +618,7 @@ function print_header()
     for (x in x_labels) {
 	x_px = plot_x_px + (x - x_left) * px_per_x;
 	printf "  <line\n";
+	printf "      class=\"x axis tick\"\n";
 	printf "      x1=\"%f\"\n", x_px;
 	printf "      x2=\"%f\"\n", x_px;
 	printf "      y1=\"%f\"\n", x_axis_y_px;
@@ -627,10 +628,9 @@ function print_header()
 	printf "  <text\n";
 	printf "      class=\"x axis label\"\n";
 	printf "      x=\"%f\"\n", x_px;
-	printf "      y=\"%f\"\n", x_axis_y_px + tick_len + pad;
+	printf "      y=\"%f\"\n", x_axis_y_px + tick_len + pad + font_sz;
 	printf "      font-size=\"%.1f\"\n", font_sz;
-	printf "      text-anchor=\"middle\"\n";
-	printf "      dominant-baseline=\"hanging\">";
+	printf "      text-anchor=\"middle\">\n";
 	printf "%s", x_labels[x];
 	printf "</text>\n";
     }
@@ -640,10 +640,10 @@ function print_header()
     if ( x_title_ht > 0.0 ) {
 	printf "<text\n";
 	printf "    id=\"xTitle\"\n";
+	printf "    class=\"x axis label\"\n";
 	printf "    x=\"%f\"\n", x_axis_x_px + x_axis_width_px / 2.0;
-	printf "    y=\"%f\"\n", x_axis_y_px + x_axis_ht_px + pad;
+	printf "    y=\"%f\"\n", x_axis_y_px + x_axis_ht_px + pad + font_sz;
 	printf "    font-size=\"%.1f\"\n", font_sz;
-	printf "    dominant-baseline=\"hanging\"";
 	printf "    text-anchor=\"middle\">";
 	printf "%s", x_title;
 	printf "</text>\n";
@@ -664,6 +664,7 @@ function print_header()
     for (y in y_labels) {
 	y_px = top + (y_top - y) * px_per_y;
 	printf "  <line\n";
+	printf "      class=\"y axis tick\"\n";
 	printf "      x1=\"%f\"\n", plot_x_px - tick_len;
 	printf "      x2=\"%f\"\n", plot_x_px;
 	printf "      y1=\"%f\"\n", y_px;
@@ -692,6 +693,7 @@ function print_header()
 	       x, y;
 	printf "<text\n";
 	printf "    id=\"yTitle\"\n";
+	printf "    class=\"y axis label\"\n";
 	printf "    x=\"0.0\"\n";
 	printf "    y=\"0.0\"";
 	printf "    font-size=\"%.1f\"\n", font_sz;
