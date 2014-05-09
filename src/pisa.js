@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.47 $ $Date: 2014/05/04 16:36:05 $
+   .	$Revision: 1.48 $ $Date: 2014/05/08 22:21:09 $
  */
 
 /*
@@ -75,6 +75,7 @@ window.addEventListener("load", function (evt)
 	/* These objects store information about the plot elements */
 	var root = document.rootElement;
 	var plot = document.getElementById("plot");
+	var plotArea = document.getElementById("PlotRect");
 	var plotBackground = document.getElementById("plotBackground");
 	var cartG = document.getElementById("cartG");
 	var xAxis = document.getElementById("xAxis");
@@ -176,17 +177,17 @@ window.addEventListener("load", function (evt)
 	   provides the transform. It does not redraw the axes.
 	 */
 
-	function set_cart(cart)
+	function setXform(cart)
 	{
 	    var xForm = cartG.transform.baseVal.getItem(0).matrix;
 	    var plotWidth = plot.width.baseVal.value;
-	    var htSVG = plot.height.baseVal.value;
+	    var plotHeight = plot.height.baseVal.value;
 	    xForm.a = plotWidth / (cart.rght - cart.left);
 	    xForm.b = 0.0;
 	    xForm.c = 0.0;
-	    xForm.d = htSVG / (cart.btm - cart.top);
+	    xForm.d = plotHeight / (cart.btm - cart.top);
 	    xForm.e = plotWidth * cart.left / (cart.left - cart.rght);
-	    xForm.f = htSVG * cart.top / (cart.top - cart.btm);
+	    xForm.f = plotHeight * cart.top / (cart.top - cart.btm);
 	}
 
 	/* Convert Cartesian x to SVG x */
@@ -213,9 +214,9 @@ window.addEventListener("load", function (evt)
 	function cart_y_to_svg(cartY)
 	{
 	    var yTopSVG = plot.y.baseVal.value;
-	    var htSVG = plot.height.baseVal.value;
+	    var plotHeight = plot.height.baseVal.value;
 	    var cart = get_cart();
-	    var pxPerM = htSVG / (cart.btm - cart.top);
+	    var pxPerM = plotHeight / (cart.btm - cart.top);
 	    return yTopSVG + (cartY - cart.top) * pxPerM;
 	}
 
@@ -223,9 +224,9 @@ window.addEventListener("load", function (evt)
 	function svg_y_to_cart(svgY)
 	{
 	    var yTopSVG = plot.y.baseVal.value;
-	    var htSVG = plot.height.baseVal.value;
+	    var plotHeight = plot.height.baseVal.value;
 	    var cart = get_cart();
-	    var mPerPx = (cart.btm - cart.top) / htSVG;
+	    var mPerPx = (cart.btm - cart.top) / plotHeight;
 	    return cart.top + (svgY - yTopSVG) * mPerPx;
 	}
 
@@ -497,6 +498,7 @@ window.addEventListener("load", function (evt)
 	    axisWidth = yAxis.viewBox.baseVal.width;
 	    axisHeight = plotHeight + yOverHang;
 	    yAxis.setAttribute("height", axisHeight);
+	    yAxisClip.setAttribute("height", axisHeight);
 	    viewBox = yAxis.viewBox.baseVal.x;
 	    viewBox += " " + yAxisSVGY;
 	    viewBox += " " + axisWidth;
@@ -563,7 +565,7 @@ window.addEventListener("load", function (evt)
 	       move plot viewBox by this amount
 	     */
 
-	    var plotWidth, htSVG;	/* SVG dimensions of plot area */
+	    var plotWidth, plotHeight;	/* SVG dimensions of plot area */
 	    var cart;			/* Cartesian dimensions of plot area */
 	    var mPerPx;			/* Convert Cartesian distance to SVG */
 	    var dx, dy;			/* Drag distance in Cartesian
@@ -575,12 +577,12 @@ window.addEventListener("load", function (evt)
 	    dx = (dragSVGX0 - evt.clientX) * mPerPx;
 	    cart.left += dx;
 	    cart.rght += dx;
-	    htSVG = plot.height.baseVal.value;
-	    mPerPx = (cart.btm - cart.top) / htSVG;
+	    plotHeight = plot.height.baseVal.value;
+	    mPerPx = (cart.btm - cart.top) / plotHeight;
 	    dy = (dragSVGY0 - evt.clientY) * mPerPx;
 	    cart.btm += dy;
 	    cart.top += dy;
-	    set_cart(cart);
+	    setXform(cart);
 
 	    /*
 	       Restore plot and background to their position at start of drag.
@@ -684,7 +686,7 @@ window.addEventListener("load", function (evt)
 	    var dy = (cart.top - cart.btm) * (1.0 - s) / 2.0;
 	    cart.btm += dy;
 	    cart.top -= dy;
-	    set_cart(cart);
+	    setXform(cart);
 	    for (var c = 0; c < plot.childNodes.length; c++) {
 		zoom_attrs(plot.childNodes[c], s);
 	    }
@@ -752,11 +754,10 @@ window.addEventListener("load", function (evt)
 	    root.setAttribute("height", newRootHeight);
 	    plot.setAttribute("width", newPlotWidth);
 	    plot.setAttribute("height", newPlotHeight);
-	    var plotArea = document.getElementById("PlotRect");
 	    plotArea.setAttribute("width", newPlotWidth);
 	    plotArea.setAttribute("height", newPlotHeight);
 
-	    set_cart(cart);
+	    setXform(cart);
 	    update_background();
 	    update_axes();
 	}
@@ -777,10 +778,17 @@ window.addEventListener("load", function (evt)
 	    yAxis.removeChild(yAxis.lastChild);
 	}
 	if ( keep_margins ) {
-	    resize.call(this, {});
-	} else {
-	    update_axes();
+	    var cart = get_cart();
+	    root.setAttribute("width", this.innerWidth);
+	    root.setAttribute("height", this.innerHeight);
+	    plot.setAttribute("width", this.innerWidth - leftMgn - rghtMgn);
+	    plot.setAttribute("height", this.innerHeight - topMgn - btmMgn);
+	    plotArea.setAttribute("width", this.innerWidth - leftMgn - rghtMgn);
+	    plotArea.setAttribute("height", this.innerHeight - topMgn - btmMgn);
+	    setXform(cart);
+	    update_background();
 	}
+	update_axes();
 
 }, false);			/* Done defining load callback */
 
