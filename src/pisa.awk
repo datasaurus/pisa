@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.42 $ $Date: 2014/05/08 22:21:09 $
+# $Revision: 1.43 $ $Date: 2014/05/08 22:34:45 $
 #
 ################################################################################
 
@@ -120,7 +120,9 @@ BEGIN {
     y_prx = "3";
     x_title = "";
     y_title = "";
-    font_size = 12.0;
+    font_sz = 12.0;
+    tick_len = 0.5 * font_sz
+    pad = 0.5 * font_sz;		# Separator between axis elements
     err = "/dev/stderr";
 }
 
@@ -376,18 +378,21 @@ function print_header()
 
 #   Determine space requirements for axis titles
     if ( length(x_title) > 0 ) {
-	x_title_ht = 2.0 * font_sz;
+	x_title_ht = pad + font_sz;
     } else {
 	x_title_ht = 0.0;
     }
     if ( length(y_title) > 0 ) {
-	y_title_ht = 2.0 * font_sz;
+	y_title_ht = font_sz + pad;
     } else {
 	y_title_ht = 0.0;
     }
-    bottom += x_title_ht;
 
-#   Compute plot width and height
+#   Space below plot will have tick mark, padding, label, and possibly title.
+    x_axis_ht_px = tick_len + pad + font_sz;
+    below_plot = x_axis_ht_px + x_title_ht + bottom;
+
+#   Make first guess at plot width and height
     plot_x_px = left;
     plot_width_px = doc_width - left - right;
     if ( plot_width_px <= 0 ) {
@@ -398,7 +403,7 @@ function print_header()
 	r = fabs((y_top - y_btm) / (x_rght - x_left));
 	plot_height_px = plot_width_px * r;
     } else {
-	plot_height_px = doc_height - top - bottom;
+	plot_height_px = doc_height - top - below_plot;
 	if ( plot_height_px <= 0 ) {
 	    printf "Negative plot height.\n" > err;
 	    exit 1;
@@ -418,7 +423,7 @@ function print_header()
 	}
     }
     y_axis_y_px = top - font_sz;
-    y_axis_width_px = font_sz * (max_len + 0.5) + y_title_ht;
+    y_axis_width_px = font_sz * max_len + tick_len + y_title_ht;
     y_axis_x_px = left;
 
 #   Adjust left margin so that it includes user specified margin plus space
@@ -434,9 +439,9 @@ function print_header()
     if ( doc_height == "nan" ) {
 	r = fabs((y_top - y_btm) / (x_rght - x_left));
 	plot_height_px = plot_width_px * r;
-	doc_height = plot_height_px + top + bottom;
+	doc_height = plot_height_px + top + below_plot;
     } else {
-	plot_height_px = doc_height - top - bottom;
+	plot_height_px = doc_height - top - below_plot;
 	if ( plot_height_px <= 0 ) {
 	    printf "Negative plot height.\n" > err;
 	    exit 1;
@@ -451,7 +456,6 @@ function print_header()
     x_axis_x_px = plot_x_px - 4.0 * font_sz;
     x_axis_y_px = top + plot_height_px;
     x_axis_width_px = plot_width_px + 8.0 * font_sz;
-    x_axis_height_px = 3 * font_sz;
 
 #   Create a set of labels for the x axis;
     px_per_x = plot_width_px / (x_rght - x_left);
@@ -526,19 +530,19 @@ function print_header()
 
 #   X axis geometry and clip path.
     printf "  <!-- Clip path for x axis labels -->\n";
-    printf "  <clipPath>\n";
-    printf "    id=\"xAxisClip\"\n";
+    printf "  <clipPath\n";
+    printf "    id=\"xAxisClip\">\n";
     printf "    <rect\n";
     printf "        id=\"xAxisClipRect\"\n";
     printf "        x=\"%f\"\n", x_axis_x_px;
     printf "        y=\"%f\"\n", x_axis_y_px;
     printf "        width=\"%f\"\n", x_axis_width_px;
-    printf "        height=\"%f\"/>\n", x_axis_height_px;
+    printf "        height=\"%f\"/>\n", x_axis_ht_px;
     printf "  </clipPath>\n";
 
 #   Y axis geometry and clip path.
     printf "  <!-- Clip path for y axis labels -->\n";
-    printf "  <clipPath>\n";
+    printf "  <clipPath\n";
     printf "    id=\"yAxisClip\">\n";
     printf "    <rect\n";
     printf "        id=\"yAxisClipRect\"\n";
@@ -608,22 +612,22 @@ function print_header()
     printf "      x=\"%f\"\n", x_axis_x_px;
     printf "      y=\"%f\"\n", x_axis_y_px;
     printf "      width=\"%f\"\n", x_axis_width_px;
-    printf "      height=\"%f\"\n", x_axis_height_px;
+    printf "      height=\"%f\"\n", x_axis_ht_px;
     printf "      viewBox=\"%f %f %f %f\" >\n",
-	   x_axis_x_px, x_axis_y_px, x_axis_width_px, x_axis_height_px;
+	   x_axis_x_px, x_axis_y_px, x_axis_width_px, x_axis_ht_px;
     for (x in x_labels) {
 	x_px = plot_x_px + (x - x_left) * px_per_x;
 	printf "  <line\n";
 	printf "      x1=\"%f\"\n", x_px;
 	printf "      x2=\"%f\"\n", x_px;
-	printf "      y1=\"%f\"\n", top + plot_height_px;
-	printf "      y2=\"%f\"\n", top + plot_height_px + 0.5 * font_sz;
+	printf "      y1=\"%f\"\n", x_axis_y_px;
+	printf "      y2=\"%f\"\n", x_axis_y_px + tick_len;
 	printf "      stroke=\"black\"\n"
 	printf "      stroke-width=\"1\" />\n"
 	printf "  <text\n";
 	printf "      class=\"x axis label\"\n";
 	printf "      x=\"%f\"\n", x_px;
-	printf "      y=\"%f\"\n", top + plot_height_px + 1.5 * font_sz;
+	printf "      y=\"%f\"\n", x_axis_y_px + tick_len + pad;
 	printf "      font-size=\"%.1f\"\n", font_sz;
 	printf "      text-anchor=\"middle\"\n";
 	printf "      dominant-baseline=\"hanging\">";
@@ -637,8 +641,9 @@ function print_header()
 	printf "<text\n";
 	printf "    id=\"xTitle\"\n";
 	printf "    x=\"%f\"\n", x_axis_x_px + x_axis_width_px / 2.0;
-	printf "    y=\"%f\"\n", x_axis_y_px + x_axis_height_px;
+	printf "    y=\"%f\"\n", x_axis_y_px + x_axis_ht_px + pad;
 	printf "    font-size=\"%.1f\"\n", font_sz;
+	printf "    dominant-baseline=\"hanging\"";
 	printf "    text-anchor=\"middle\">";
 	printf "%s", x_title;
 	printf "</text>\n";
@@ -659,7 +664,7 @@ function print_header()
     for (y in y_labels) {
 	y_px = top + (y_top - y) * px_per_y;
 	printf "  <line\n";
-	printf "      x1=\"%f\"\n", plot_x_px - 0.5 * font_sz;
+	printf "      x1=\"%f\"\n", plot_x_px - tick_len;
 	printf "      x2=\"%f\"\n", plot_x_px;
 	printf "      y1=\"%f\"\n", y_px;
 	printf "      y2=\"%f\"\n", y_px;
