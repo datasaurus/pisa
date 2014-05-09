@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.49 $ $Date: 2014/05/09 16:25:55 $
+   .	$Revision: 1.50 $ $Date: 2014/05/09 16:30:42 $
  */
 
 /*
@@ -38,7 +38,7 @@
  */
 
 window.addEventListener("load", function (evt)
-{
+	{
 	"use strict";
 	/*jslint browser:true */
 
@@ -48,8 +48,15 @@ window.addEventListener("load", function (evt)
 	 *************************************************************
 	 */
 
-	/* Length of an axis tick mark, pixels */
-	var tick_len = 9.0;
+	/* Lengths of axis tick marks, pixels */
+	var tick = (document.getElementsByClassName("x axis tick"))[0];
+	var tick_len = tick.y2.baseVal.value - tick.y1.baseVal.value;
+
+	/* Label font size, might vary during run time */
+	var font_sz;
+
+	/* Padding between label elements */
+	var pad;
 
 	/* Number of significant digits in axis labels */
 	var x_prx = 3;
@@ -62,7 +69,7 @@ window.addEventListener("load", function (evt)
 	/*
 	   If keep_margins is true, plot will resize with window to preserve
 	   margins. If false, plot will remain at prescribed size.
-	*/
+	 */
 
 	var keep_margins = true;
 
@@ -99,7 +106,7 @@ window.addEventListener("load", function (evt)
 	   For each axis there will be an array of objects.
 	   Each object will have as members:
 	   lbl	- a text element with the text of the label
-	   tic	- a line element with a tick mark
+	   tick	- a line element with a tick mark
 	 */
 
 	var x_labels = [];
@@ -264,7 +271,7 @@ window.addEventListener("load", function (evt)
 	}
 
 	/*
-	   Hide label, which must be a label object with text and tic elements.
+	   Hide label, which must be a label object with text and tick elements.
 	   The elements still exist in the document.
 	 */ 
 
@@ -273,10 +280,10 @@ window.addEventListener("load", function (evt)
 	    label.lbl.setAttribute("x", -80.0);
 	    label.lbl.setAttribute("y", -80.0);
 	    label.lbl.textContent = "";
-	    label.tic.setAttribute("x1", -80.0);
-	    label.tic.setAttribute("x2", -90.0);
-	    label.tic.setAttribute("y1", -80.0);
-	    label.tic.setAttribute("y2", -90.0);
+	    label.tick.setAttribute("x1", -80.0);
+	    label.tick.setAttribute("x2", -90.0);
+	    label.tick.setAttribute("y1", -80.0);
+	    label.tick.setAttribute("y2", -90.0);
 	}
 
 	/*
@@ -288,15 +295,16 @@ window.addEventListener("load", function (evt)
 	{
 	    var x;			/* Label location */
 	    var y;			/* Label text location */
-	    var y1, y2;			/* Limits of tic */
+	    var y1, y2;			/* Limits of tick */
 	    var plotLeft, plotRght;	/* SVG x coordinates of left and right
 					   side of plot */
 	    var l;			/* Label index */
-	    var textLength;		/* SVG width required display text of
+	    var textLength;		/* SVG width required to display text of
 					   all labels */
-	    var lbl, tic;		/* New label and tic elements */
+	    var lbl, tick;		/* Label and tick elements */
+	    var bbox;			/* Bounding box for a text label */
 
-	    y = xAxis.y.baseVal.value + 1.5 * tick_len;
+	    y = xAxis.y.baseVal.value + tick_len + pad + font_sz;
 	    y1 = xAxis.y.baseVal.value;
 	    y2 = y1 + tick_len;
 	    plotLeft = plot.x.baseVal.value;
@@ -306,26 +314,25 @@ window.addEventListener("load", function (evt)
 		    lbl = document.createElementNS(svgNs, "text");
 		    lbl.setAttribute("class", "x axis label");
 		    lbl.setAttribute("text-anchor", "middle");
-		    lbl.setAttribute("dominant-baseline", "hanging");
 		    xAxis.appendChild(lbl);
-		    tic = document.createElementNS(svgNs, "line");
-		    tic.setAttribute("class", "x axis tic");
-		    tic.setAttribute("stroke", "black");
-		    tic.setAttribute("stroke-width", "1");
-		    xAxis.appendChild(tic);
+		    tick = document.createElementNS(svgNs, "line");
+		    tick.setAttribute("class", "x axis tick");
+		    tick.setAttribute("stroke", "black");
+		    tick.setAttribute("stroke-width", "1");
+		    xAxis.appendChild(tick);
 		    x_labels[l] = {};
 		    x_labels[l].lbl = lbl;
-		    x_labels[l].tic = tic;
+		    x_labels[l].tick = tick;
 		}
 		x = cart_x_to_svg(coords[l]);
 		if ( plotLeft <= x && x <= plotRght ) {
 		    x_labels[l].lbl.setAttribute("x", x);
 		    x_labels[l].lbl.setAttribute("y", y);
 		    x_labels[l].lbl.textContent = to_prx(coords[l], x_prx);
-		    x_labels[l].tic.setAttribute("x1", x);
-		    x_labels[l].tic.setAttribute("x2", x);
-		    x_labels[l].tic.setAttribute("y1", y1);
-		    x_labels[l].tic.setAttribute("y2", y2);
+		    x_labels[l].tick.setAttribute("x1", x);
+		    x_labels[l].tick.setAttribute("x2", x);
+		    x_labels[l].tick.setAttribute("y1", y1);
+		    x_labels[l].tick.setAttribute("y2", y2);
 		    textLength += x_labels[l].lbl.getComputedTextLength();
 		} else {
 		    hide_label(x_labels[l]);
@@ -347,14 +354,14 @@ window.addEventListener("load", function (evt)
 	    var yAxisRght;		/* SVG x coordinates of RIGHT side of
 					   y axis element */
 	    var x;			/* Label text location */
-	    var x1, x2;			/* Limits of tic */
+	    var x1, x2;			/* Limits of tick */
 	    var y;			/* SVG y coordinate of a label */
 	    var plotTop, plotBtm;	/* SVG y coordinates of top and bottom
 					   of plot */
 	    var l;			/* Label, coordinate index */
 	    var bbox;			/* Bounding box for an element */
 	    var textHeight;		/* Total display height */
-	    var lbl, tic;
+	    var lbl, tick;
 
 	    yAxisRght = yAxis.x.baseVal.value + yAxis.width.baseVal.value;
 	    x = yAxisRght - 1.5 * tick_len;
@@ -369,24 +376,24 @@ window.addEventListener("load", function (evt)
 		    lbl.setAttribute("text-anchor", "end");
 		    lbl.setAttribute("dominant-baseline", "mathematical");
 		    yAxis.appendChild(lbl);
-		    tic = document.createElementNS(svgNs, "line");
-		    tic.setAttribute("class", "y axis tic");
-		    tic.setAttribute("stroke", "black");
-		    tic.setAttribute("stroke-width", "1");
-		    yAxis.appendChild(tic);
+		    tick = document.createElementNS(svgNs, "line");
+		    tick.setAttribute("class", "y axis tick");
+		    tick.setAttribute("stroke", "black");
+		    tick.setAttribute("stroke-width", "1");
+		    yAxis.appendChild(tick);
 		    y_labels[l] = {};
 		    y_labels[l].lbl = lbl;
-		    y_labels[l].tic = tic;
+		    y_labels[l].tick = tick;
 		}
 		y = cart_y_to_svg(coords[l]);
 		if ( plotSVGY <= y && y <= plotBtm ) {
 		    y_labels[l].lbl.setAttribute("x", x);
 		    y_labels[l].lbl.setAttribute("y", y);
 		    y_labels[l].lbl.textContent = to_prx(coords[l], y_prx);
-		    y_labels[l].tic.setAttribute("x1", x1);
-		    y_labels[l].tic.setAttribute("x2", x2);
-		    y_labels[l].tic.setAttribute("y1", y);
-		    y_labels[l].tic.setAttribute("y2", y);
+		    y_labels[l].tick.setAttribute("x1", x1);
+		    y_labels[l].tick.setAttribute("x2", x2);
+		    y_labels[l].tick.setAttribute("y1", y);
+		    y_labels[l].tick.setAttribute("y2", y);
 		    bbox = y_labels[l].lbl.getBBox();
 		    textHeight += bbox.height;
 		} else {
@@ -468,10 +475,18 @@ window.addEventListener("load", function (evt)
 	    var cart;			/* Limits of plot in Cartesian
 					   coordinates */
 	    var xForm;			/* Transform to rotate y axis title */
+	    var lbl;			/* Label text element */
+	    var bbox;			/* Bounding box for lbl */
 
 	    plotWidth = plot.width.baseVal.value;
 	    plotHeight = plot.height.baseVal.value;
 	    cart = get_cart();
+
+	    /* Update font size and padding */
+	    lbl = document.getElementsByClassName("x axis label")[0];
+	    bbox = lbl.getBBox();
+	    font_sz = bbox.height;
+	    pad = xAxis.height.baseVal.value - tick_len - font_sz;
 
 	    /* Restore x axis position and update viewBox */
 	    xAxis.setAttribute("x", xAxisSVGX);
@@ -488,7 +503,7 @@ window.addEventListener("load", function (evt)
 	    viewBox += " " + axisHeight;
 	    xAxis.setAttribute("viewBox", viewBox);
 	    xTitle.setAttribute("x", xAxisSVGX + axisWidth / 2.0);
-	    xTitle.setAttribute("y", xAxisSVGY + axisHeight);
+	    xTitle.setAttribute("y", xAxisSVGY + axisHeight + pad + font_sz);
 
 	    /* Create new labels for x axis */
 	    mk_labels(cart.left, cart.rght, apply_x_coords, plotWidth / 4);
@@ -729,7 +744,7 @@ window.addEventListener("load", function (evt)
 	    var newRootWidth = innerWidth;
 	    var newRootHeight = innerHeight
 
-	    var currPlotWidth = plot.width.baseVal.value;
+		var currPlotWidth = plot.width.baseVal.value;
 	    var currPlotHeight = plot.height.baseVal.value;
 	    var newPlotWidth = newRootWidth - leftMgn - rghtMgn;
 	    var newPlotHeight = newRootHeight - topMgn - btmMgn;
@@ -791,5 +806,5 @@ window.addEventListener("load", function (evt)
 	}
 	update_axes();
 
-}, false);			/* Done defining load callback */
+	}, false);			/* Done defining load callback */
 
