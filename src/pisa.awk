@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.44 $ $Date: 2014/05/09 18:57:15 $
+# $Revision: 1.45 $ $Date: 2014/05/09 20:40:10 $
 #
 ################################################################################
 
@@ -383,9 +383,9 @@ function print_header()
 	x_title_ht = 0.0;
     }
     if ( length(y_title) > 0 ) {
-	y_title_ht = font_sz + pad;
+	y_title_width = font_sz + pad;
     } else {
-	y_title_ht = 0.0;
+	y_title_width = 0.0;
     }
 
 #   Space below plot will have tick mark, padding, label, and possibly title.
@@ -412,7 +412,6 @@ function print_header()
 
 #   Create a first guess set of labels for the y axis. From this set, determine
 #   width needed for y axis labels, tick marks, and title.
-    px_per_y = plot_height_px / (y_top - y_btm);
     n_max = plot_height_px / font_sz / 2;
     axis_lbl(y_btm, y_top, y_prx, n_max, "v", y_labels);
     max_len = 0.0;
@@ -422,15 +421,16 @@ function print_header()
 	    max_len = len;
 	}
     }
-    y_axis_y_px = top - font_sz;
-    y_axis_width_px = font_sz * max_len + tick_len + y_title_ht;
-    y_axis_x_px = left;
+    y_axis_extra = 2.0 * font_sz + pad;
+    y_axis_y_px = top - y_axis_extra / 2.0;
+    y_axis_width_px = font_sz * max_len + tick_len;
+    y_axis_x_px = left + y_title_width;
 
 #   Adjust left margin so that it includes user specified margin plus space
 #   needed for y axis element. Recompute plot width and height for the new
 #   left margin. Recompute labels for the new plot height. Assume, perhaps
 #   naively, that space needs for the y axis do not change. This could be a bug.
-    plot_x_px = left + y_axis_width_px;
+    plot_x_px = left + y_title_width + y_axis_width_px;
     plot_width_px = doc_width - plot_x_px - right;
     if ( plot_width_px <= 0 ) {
 	printf "Negative plot width.\n" > err;
@@ -447,24 +447,33 @@ function print_header()
 	    exit 1;
 	}
     }
-    y_axis_height_px = plot_height_px + 3.0 * font_sz;
-    px_per_y = plot_height_px / (y_top - y_btm);
-    n_max = plot_height_px / font_sz / 2;
+    y_axis_height_px = plot_height_px + y_axis_extra;
+    n_max = 0.5 * plot_height_px / font_sz;
     axis_lbl(y_btm, y_top, y_prx, n_max, "v", y_labels);
-
-#   Compute geometry for x axis.
-    x_axis_x_px = plot_x_px - 4.0 * font_sz;
-    x_axis_y_px = top + plot_height_px;
-    x_axis_width_px = plot_width_px + 8.0 * font_sz;
 
 #   Create a set of labels for the x axis;
     px_per_x = plot_width_px / (x_rght - x_left);
-    n_max = plot_width_px / font_sz / 2;
+    n_max = 0.5 * plot_width_px / font_sz;
     axis_lbl(x_left, x_rght, x_prx, n_max, "h", x_labels);
 
-#   Compute transform matrix for plot area
-#        X_svg = a * x + e
-#        Y_svg = d * y + f
+#   Compute geometry for x axis. Add space at ends so that labels can
+#   extend beyond plot as needed.
+    max_len = 0.0;
+    for (x in x_labels) {
+	len = length(x_labels[x]);
+	if ( len > max_len ) {
+	    max_len = len;
+	}
+    }
+    x_axis_extra = max_len * font_sz;
+    x_axis_x_px = plot_x_px - x_axis_extra / 2;
+    x_axis_width_px = plot_width_px + x_axis_extra;
+    x_axis_y_px = top + plot_height_px;
+
+#   Compute transform matrix for plot area. This will convert Cartesian
+#   coordinates to pixels.
+#        x_px = a * x_cart + e
+#        y_px = d * y_cart + f
 #   Ref: http://www.w3.org/TR/SVG11/coords.html#TransformMatrixDefined
     a = plot_width_px / (x_rght - x_left);
     c = 0.0;
@@ -661,19 +670,21 @@ function print_header()
     printf "    height=\"%f\"\n", y_axis_height_px;
     printf "    viewBox=\"%f %f %f %f\">\n",
 	   y_axis_x_px, y_axis_y_px, y_axis_width_px, y_axis_height_px;
+    x_px = y_axis_x_px + y_axis_width_px - tick_len;
+    px_per_y = plot_height_px / (y_top - y_btm);
     for (y in y_labels) {
 	y_px = top + (y_top - y) * px_per_y;
 	printf "  <line\n";
 	printf "      class=\"y axis tick\"\n";
-	printf "      x1=\"%f\"\n", plot_x_px - tick_len;
-	printf "      x2=\"%f\"\n", plot_x_px;
+	printf "      x1=\"%f\"\n", x_px;
+	printf "      x2=\"%f\"\n", x_px + tick_len;
 	printf "      y1=\"%f\"\n", y_px;
 	printf "      y2=\"%f\"\n", y_px;
 	printf "      stroke=\"black\"\n"
 	printf "      stroke-width=\"1\" />\n"
 	printf "  <text\n";
 	printf "      class=\"y axis label\"\n";
-	printf "      x=\"%f\"\n", plot_x_px - font_sz;
+	printf "      x=\"%f\"\n", x_px;
 	printf "      y=\"%f\"\n", y_px;
 	printf "      font-size=\"%.1f\"\n", font_sz;
 	printf "      text-anchor=\"end\"\n";
@@ -684,8 +695,8 @@ function print_header()
     printf "  </svg>\n";
     printf "</g>\n";
     printf "\n";
-    if ( y_title_ht > 0.0 ) {
-	x = y_axis_x_px + y_axis_width_px - font_sz * (max_len + 0.5);
+    if ( y_title_width > 0.0 ) {
+	x = y_axis_x_px - pad;
 	y = y_axis_y_px + y_axis_height_px / 2.0;
 	printf "<g\n";
 	printf "    id=\"yTitleTransform\"\n";
