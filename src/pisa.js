@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.52 $ $Date: 2014/05/13 20:45:34 $
+   .	$Revision: 1.53 $ $Date: 2014/05/13 21:02:08 $
  */
 
 /*
@@ -634,7 +634,6 @@ window.addEventListener("load", function (evt)
 	}
 
 	plot.addEventListener("mousedown", start_plot_drag, false);
-	plot.addEventListener("mousemove", update_cursor_loc, false);
 
 	/*
 	   Create a text element that displays the Cartesian coordinates
@@ -655,6 +654,7 @@ window.addEventListener("load", function (evt)
 	    var txt = "Cursor: " + to_prx(x, x_prx) + " " + to_prx(y, x_prx);
 	    cursor_loc.textContent = txt;
 	}
+	plot.addEventListener("mousemove", update_cursor_loc, false);
 
 	/*
 	   This function applies zoom factor s to certain presentation
@@ -793,12 +793,15 @@ window.addEventListener("load", function (evt)
 		root.removeChild(zoom_in);
 		root.removeChild(zoom_out);
 		root.removeChild(save);
-		cursor_loc.textContent = "";
+		root.removeChild(cursor_loc);
 		window.print();
-		root.appendChild(zoom_in);
-		root.appendChild(zoom_out);
-		root.appendChild(save);
-	}, false);
+		window.setTimeout(function () {
+		    root.appendChild(zoom_in);
+		    root.appendChild(zoom_out);
+		    root.appendChild(save);
+		    root.appendChild(cursor_loc);
+		    }, 500.0);
+		}, false);
 	root.appendChild(save);
 
 	/*
