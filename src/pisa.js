@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.50 $ $Date: 2014/05/09 16:30:42 $
+   .	$Revision: 1.51 $ $Date: 2014/05/09 20:40:28 $
  */
 
 /*
@@ -65,6 +65,7 @@ window.addEventListener("load", function (evt)
 	/* Links to external images for buttons */
 	var zoom_in_img = "zoom_in.svg";
 	var zoom_out_img = "zoom_out.svg";
+	var print_img = "print.svg";
 
 	/*
 	   If keep_margins is true, plot will resize with window to preserve
@@ -641,7 +642,7 @@ window.addEventListener("load", function (evt)
 	 */
 
 	var cursor_loc = document.createElementNS(svgNs, "text");
-	cursor_loc.setAttribute("x", "54");
+	cursor_loc.setAttribute("x", "120");
 	cursor_loc.setAttribute("y", "0");
 	cursor_loc.setAttribute("dominant-baseline", "hanging");
 	cursor_loc.textContent = "x y";
@@ -780,6 +781,26 @@ window.addEventListener("load", function (evt)
 	if ( keep_margins ) {
 	    this.addEventListener("resize", resize, true);
 	}
+
+	/* Save button */
+	var save = document.createElementNS(svgNs, "image");
+	save.setAttribute("x", "48");
+	save.setAttribute("y", "0");
+	save.setAttribute("width", "60");
+	save.setAttribute("height", "24");
+	save.setAttributeNS(xlinkNs, "xlink:href", print_img);
+	save.addEventListener("click", function (evt) {
+		root.removeChild(zoom_in);
+		root.removeChild(zoom_out);
+		root.removeChild(save);
+		root.removeChild(cursor_loc);
+		window.print();
+		root.appendChild(zoom_in);
+		root.appendChild(zoom_out);
+		root.appendChild(save);
+		root.appendChild(cursor_loc);
+	}, false);
+	root.appendChild(save);
 
 	/*
 	   Redraw with javascript. This prevents sudden changes
