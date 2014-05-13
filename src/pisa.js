@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.51 $ $Date: 2014/05/09 20:40:28 $
+   .	$Revision: 1.52 $ $Date: 2014/05/13 20:45:34 $
  */
 
 /*
@@ -643,7 +643,7 @@ window.addEventListener("load", function (evt)
 
 	var cursor_loc = document.createElementNS(svgNs, "text");
 	cursor_loc.setAttribute("x", "120");
-	cursor_loc.setAttribute("y", "0");
+	cursor_loc.setAttribute("y", "4");
 	cursor_loc.setAttribute("dominant-baseline", "hanging");
 	cursor_loc.textContent = "x y";
 	root.appendChild(cursor_loc);
@@ -793,12 +793,11 @@ window.addEventListener("load", function (evt)
 		root.removeChild(zoom_in);
 		root.removeChild(zoom_out);
 		root.removeChild(save);
-		root.removeChild(cursor_loc);
+		cursor_loc.textContent = "";
 		window.print();
 		root.appendChild(zoom_in);
 		root.appendChild(zoom_out);
 		root.appendChild(save);
-		root.appendChild(cursor_loc);
 	}, false);
 	root.appendChild(save);
 
