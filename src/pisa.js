@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.53 $ $Date: 2014/05/13 21:02:08 $
+   .	$Revision: 1.54 $ $Date: 2014/05/13 21:21:20 $
  */
 
 /*
@@ -62,11 +62,6 @@ window.addEventListener("load", function (evt)
 	var x_prx = 3;
 	var y_prx = 3;
 
-	/* Links to external images for buttons */
-	var zoom_in_img = "zoom_in.svg";
-	var zoom_out_img = "zoom_out.svg";
-	var print_img = "print.svg";
-
 	/*
 	   If keep_margins is true, plot will resize with window to preserve
 	   margins. If false, plot will remain at prescribed size.
@@ -93,6 +88,9 @@ window.addEventListener("load", function (evt)
 	var yAxisClip = document.getElementById("yAxisClipRect");
 	var yTitle = document.getElementById("yTitle");
 	var yTitleXForm = document.getElementById("yTitleTransform");
+	var zoom_in = document.getElementById("zoom_in");
+	var zoom_out = document.getElementById("zoom_out");
+	var print = document.getElementById("print");
 
 	/*
 	   Axis labels are allowed to extend beyond plot edge by
@@ -635,6 +633,12 @@ window.addEventListener("load", function (evt)
 
 	plot.addEventListener("mousedown", start_plot_drag, false);
 
+	/* Make interactive elements visible */
+	var e, elems = document.getElementsByClassName("interactive");
+	for (e = 0; e < elems.length; e++) {
+	    elems[e].setAttribute("visibility", "visible");
+	}
+
 	/*
 	   Create a text element that displays the Cartesian coordinates
 	   of the cursor location.
@@ -712,24 +716,10 @@ window.addEventListener("load", function (evt)
 	}
 
 	/* Zoom controls */
-	var zoom_in = document.createElementNS(svgNs, "image");
-	zoom_in.setAttribute("x", "0");
-	zoom_in.setAttribute("y", "0");
-	zoom_in.setAttribute("width", "24");
-	zoom_in.setAttribute("height", "24");
-	zoom_in.setAttributeNS(xlinkNs, "xlink:href", zoom_in_img);
 	zoom_in.addEventListener("click",
 		function (evt) { zoom_plot(3.0 / 4.0); }, false);
-	root.appendChild(zoom_in);
-	var zoom_out = document.createElementNS(svgNs, "image");
-	zoom_out.setAttribute("x", "24");
-	zoom_out.setAttribute("y", "0");
-	zoom_out.setAttribute("width", "24");
-	zoom_out.setAttribute("height", "24");
-	zoom_out.setAttributeNS(xlinkNs, "xlink:href", zoom_out_img);
 	zoom_out.addEventListener("click", 
 		function (evt) { zoom_plot(4.0 / 3.0); }, false);
-	root.appendChild(zoom_out);
 
 	/*
 	   Grow plot if window resizes.
@@ -782,27 +772,20 @@ window.addEventListener("load", function (evt)
 	    this.addEventListener("resize", resize, true);
 	}
 
-	/* Save button */
-	var save = document.createElementNS(svgNs, "image");
-	save.setAttribute("x", "48");
-	save.setAttribute("y", "0");
-	save.setAttribute("width", "60");
-	save.setAttribute("height", "24");
-	save.setAttributeNS(xlinkNs, "xlink:href", print_img);
-	save.addEventListener("click", function (evt) {
+	/* Print button */
+	print.addEventListener("click", function (evt) {
 		root.removeChild(zoom_in);
 		root.removeChild(zoom_out);
-		root.removeChild(save);
+		root.removeChild(print);
 		root.removeChild(cursor_loc);
 		window.print();
 		window.setTimeout(function () {
 		    root.appendChild(zoom_in);
 		    root.appendChild(zoom_out);
-		    root.appendChild(save);
+		    root.appendChild(print);
 		    root.appendChild(cursor_loc);
 		    }, 500.0);
 		}, false);
-	root.appendChild(save);
 
 	/*
 	   Redraw with javascript. This prevents sudden changes
