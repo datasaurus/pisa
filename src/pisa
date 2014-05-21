@@ -58,7 +58,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.14 $ $Date: 2014/04/23 17:15:37 $
+# $Revision: 1.15 $ $Date: 2014/05/08 17:11:50 $
 #
 ########################################################################
 
@@ -163,7 +163,7 @@ then
 	printf " [-t pixels] [-b pixels] [-w pixels] [-h pixels] "
 	printf " [-f pixels] [-m precison] [-n precison]"
 	printf " [-p prefix_file] [-s suffix_file] [-y style_sheet]"
-	printf " x_left x_rght y_btm y_top"
+	printf " x_left x_rght y_btm y_top\n"
     } 1>&2
     exit 1
 fi
