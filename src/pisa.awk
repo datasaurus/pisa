@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.46 $ $Date: 2014/05/09 22:16:38 $
+# $Revision: 1.47 $ $Date: 2014/05/21 22:11:46 $
 #
 ################################################################################
 
@@ -719,6 +719,7 @@ function print_header()
     printf "    id=\"zoom_in\"\n";
     printf "    class=\"interactive\"\n";
     printf "    visibility=\"hidden\"\n";
+    printf "    display=\"none\"\n";
     printf "    x=\"0.0\"\n";
     printf "    y=\"0.0\"\n";
     printf "    width=\"24.0\"\n";
@@ -726,6 +727,7 @@ function print_header()
     printf "    <rect\n";
     printf "        class=\"interactive\"\n";
     printf "        visibility=\"hidden\"\n";
+    printf "        display=\"none\"\n";
     printf "        x=\"1.0\"\n";
     printf "        y=\"1.0\"\n";
     printf "        width=\"22\"\n";
@@ -736,6 +738,7 @@ function print_header()
     printf "    <circle\n";
     printf "        class=\"interactive\"\n";
     printf "        visibility=\"hidden\"\n";
+    printf "        display=\"none\"\n";
     printf "        cx=\"12.0\"\n";
     printf "        cy=\"12.0\"\n";
     printf "        r=\"6\"\n";
@@ -745,6 +748,7 @@ function print_header()
     printf "    <line\n";
     printf "        class=\"interactive\"\n";
     printf "        visibility=\"hidden\"\n";
+    printf "        display=\"none\"\n";
     printf "        x1=\"16.2426\"\n";
     printf "        y1=\"16.2426\"\n";
     printf "        x2=\"21.0\"\n";
@@ -755,6 +759,7 @@ function print_header()
     printf "    <text\n";
     printf "        class=\"interactive\"\n";
     printf "        visibility=\"hidden\"\n";
+    printf "        display=\"none\"\n";
     printf "        x=\"12\"\n";
     printf "        y=\"12\"\n";
     printf "        cursor=\"default\"\n";
@@ -773,6 +778,7 @@ function print_header()
     printf "    id=\"zoom_out\"\n";
     printf "    class=\"interactive\"\n";
     printf "    visibility=\"hidden\"\n";
+    printf "    display=\"none\"\n";
     printf "    x=\"24.0\"\n";
     printf "    y=\"0.0\"\n";
     printf "    width=\"24.0\"\n";
@@ -780,6 +786,7 @@ function print_header()
     printf "    <rect\n";
     printf "        class=\"interactive\"\n";
     printf "        visibility=\"hidden\"\n";
+    printf "        display=\"none\"\n";
     printf "        x=\"1.0\"\n";
     printf "        y=\"1.0\"\n";
     printf "        width=\"22\"\n";
@@ -790,6 +797,7 @@ function print_header()
     printf "    <circle\n";
     printf "        class=\"interactive\"\n";
     printf "        visibility=\"hidden\"\n";
+    printf "        display=\"none\"\n";
     printf "        cx=\"12.0\"\n";
     printf "        cy=\"12.0\"\n";
     printf "        r=\"6\"\n";
@@ -799,6 +807,7 @@ function print_header()
     printf "    <line\n";
     printf "        class=\"interactive\"\n";
     printf "        visibility=\"hidden\"\n";
+    printf "        display=\"none\"\n";
     printf "        x1=\"16.2426\"\n";
     printf "        y1=\"16.2426\"\n";
     printf "        x2=\"21.0\"\n";
@@ -809,6 +818,7 @@ function print_header()
     printf "    <text\n";
     printf "        class=\"interactive\"\n";
     printf "        visibility=\"hidden\"\n";
+    printf "        display=\"none\"\n";
     printf "        x=\"12\"\n";
     printf "        y=\"12\"\n";
     printf "        cursor=\"default\"\n";
@@ -827,6 +837,7 @@ function print_header()
     printf "    id=\"print\"\n";
     printf "    class=\"interactive\"\n";
     printf "    visibility=\"hidden\"\n";
+    printf "        display=\"none\"\n";
     printf "    x=\"48\"\n";
     printf "    y=\"0\"\n";
     printf "    width=\"60.0\"\n";
@@ -834,6 +845,7 @@ function print_header()
     printf "    <rect\n";
     printf "        class=\"interactive\"\n";
     printf "        visibility=\"hidden\"\n";
+    printf "        display=\"none\"\n";
     printf "        x=\"1.0\"\n";
     printf "        y=\"1.0\"\n";
     printf "        width=\"58\"\n";
@@ -844,6 +856,7 @@ function print_header()
     printf "    <text\n";
     printf "        class=\"interactive\"\n";
     printf "        visibility=\"hidden\"\n";
+    printf "        display=\"none\"\n";
     printf "        x=\"30\"\n";
     printf "        y=\"18\"\n";
     printf "        cursor=\"default\"\n";
