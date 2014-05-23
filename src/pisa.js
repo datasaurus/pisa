@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.54 $ $Date: 2014/05/13 21:21:20 $
+   .	$Revision: 1.55 $ $Date: 2014/05/21 22:11:46 $
  */
 
 /*
@@ -637,6 +637,7 @@ window.addEventListener("load", function (evt)
 	var e, elems = document.getElementsByClassName("interactive");
 	for (e = 0; e < elems.length; e++) {
 	    elems[e].setAttribute("visibility", "visible");
+	    elems[e].setAttribute("display", "inline");
 	}
 
 	/*
@@ -662,9 +663,9 @@ window.addEventListener("load", function (evt)
 
 	/*
 	   This function applies zoom factor s to certain presentation
-	   attributes of element elem and its children. It is actually used to
-	   undo a zoom so that elements do not become thicker or thinner as the
-	   plot view zooms in and out.
+	   attributes of element elem and its children. It is actually used
+	   to keep lines in the plot area from becoming thicker or thinner as
+	   the plot view zooms in and out.
 	 */
 
 	function zoom_attrs(elem, s)
@@ -701,12 +702,26 @@ window.addEventListener("load", function (evt)
 	function zoom_plot(s)
 	{
 	    var cart = get_cart();
-	    var dx = (cart.rght - cart.left) * (1.0 - s) / 2.0;
-	    cart.left += dx;
-	    cart.rght -= dx;
-	    var dy = (cart.top - cart.btm) * (1.0 - s) / 2.0;
-	    cart.btm += dy;
-	    cart.top -= dy;
+
+	    /*
+	       If origin is at a corner, zoom about it.
+	       Otherwise, zoom about center.
+	     */
+
+	    if ( (cart.left == 0.0 || cart.rght == 0.0)
+		    && (cart.btm == 0.0 || cart.top == 0.0) ) {
+		cart.left *= s;
+		cart.rght *= s;
+		cart.btm *= s;
+		cart.top *= s;
+	    } else {
+		var dx = (cart.rght - cart.left) * (1.0 - s) / 2.0;
+		cart.left += dx;
+		cart.rght -= dx;
+		var dy = (cart.top - cart.btm) * (1.0 - s) / 2.0;
+		cart.btm += dy;
+		cart.top -= dy;
+	    }
 	    setXform(cart);
 	    for (var c = 0; c < plot.childNodes.length; c++) {
 		zoom_attrs(plot.childNodes[c], s);
@@ -742,19 +757,34 @@ window.addEventListener("load", function (evt)
 
 	    var cart = get_cart();
 	    var mPerPx;
-	    var delta;			/* Increase in plot width or height,
-					   Cartesian coordinates */
+	    var delta;
 
-	    /* Update Cartesian limits using current plot rectangle */
-	    mPerPx = (cart.rght - cart.left) / currPlotWidth;
-	    delta = (newRootWidth - currRootWidth) * mPerPx;
-	    cart.left -= delta / 2;
-	    cart.rght += delta / 2;
+	    /*
+	       If origin is at a corner, zoom about it.
+	       Otherwise, zoom about center.
+	     */
 
-	    mPerPx = (cart.top - cart.btm) / currPlotHeight;
-	    delta = (newRootHeight - currRootHeight) * mPerPx;
-	    cart.top += delta / 2;
-	    cart.btm -= delta / 2;
+	    if ( (cart.left == 0.0 || cart.rght == 0.0)
+		    && (cart.btm == 0.0 || cart.top == 0.0) ) {
+		delta = newRootWidth / currRootWidth;
+		cart.left *= delta;
+		cart.rght *= delta;
+		delta = newRootHeight / currRootHeight;
+		cart.btm *= delta;
+		cart.top *= delta;
+	    } else {
+
+		/* Update Cartesian limits using current plot rectangle */
+		mPerPx = (cart.rght - cart.left) / currPlotWidth;
+		delta = (newRootWidth - currRootWidth) * mPerPx;
+		cart.left -= delta / 2;
+		cart.rght += delta / 2;
+
+		mPerPx = (cart.top - cart.btm) / currPlotHeight;
+		delta = (newRootHeight - currRootHeight) * mPerPx;
+		cart.top += delta / 2;
+		cart.btm -= delta / 2;
+	    }
 
 	    /* Adjust plot rectangle */
 	    root.setAttribute("width", newRootWidth);
