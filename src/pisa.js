@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.55 $ $Date: 2014/05/21 22:11:46 $
+   .	$Revision: 1.56 $ $Date: 2014/05/23 19:59:37 $
  */
 
 /*
@@ -701,6 +701,7 @@ window.addEventListener("load", function (evt)
 
 	function zoom_plot(s)
 	{
+	    var dx, dy;
 	    var cart = get_cart();
 
 	    /*
@@ -708,17 +709,19 @@ window.addEventListener("load", function (evt)
 	       Otherwise, zoom about center.
 	     */
 
-	    if ( (cart.left == 0.0 || cart.rght == 0.0)
-		    && (cart.btm == 0.0 || cart.top == 0.0) ) {
+	    dx = Math.abs(cart.rght - cart.left) / 128.0;
+	    dy = Math.abs(cart.top - cart.btm) / 128.0;
+	    if ( (Math.abs(cart.left) < dx || Math.abs(cart.rght) < dx)
+		    && (Math.abs(cart.btm) < dy || Math.abs(cart.top) < dy) ) {
 		cart.left *= s;
 		cart.rght *= s;
 		cart.btm *= s;
 		cart.top *= s;
 	    } else {
-		var dx = (cart.rght - cart.left) * (1.0 - s) / 2.0;
+		dx = (cart.rght - cart.left) * (1.0 - s) / 2.0;
 		cart.left += dx;
 		cart.rght -= dx;
-		var dy = (cart.top - cart.btm) * (1.0 - s) / 2.0;
+		dy = (cart.top - cart.btm) * (1.0 - s) / 2.0;
 		cart.btm += dy;
 		cart.top -= dy;
 	    }
@@ -757,15 +760,17 @@ window.addEventListener("load", function (evt)
 
 	    var cart = get_cart();
 	    var mPerPx;
-	    var delta;
+	    var delta, dx, dy;
 
 	    /*
 	       If origin is at a corner, zoom about it.
 	       Otherwise, zoom about center.
 	     */
 
-	    if ( (cart.left == 0.0 || cart.rght == 0.0)
-		    && (cart.btm == 0.0 || cart.top == 0.0) ) {
+	    dx = Math.abs(cart.rght - cart.left) / 128.0;
+	    dy = Math.abs(cart.top - cart.btm) / 128.0;
+	    if ( (Math.abs(cart.left) < dx || Math.abs(cart.rght) < dx)
+		    && (Math.abs(cart.btm) < dy || Math.abs(cart.top) < dy) ) {
 		delta = newRootWidth / currRootWidth;
 		cart.left *= delta;
 		cart.rght *= delta;
