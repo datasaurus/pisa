@@ -1,6 +1,6 @@
 #!/usr/bin/awk -f
 #
-#	xyplot.awk --
+#	pisa.awk --
 #		Create a SVG document with a cartesian plot in it.
 #
 ################################################################################
@@ -31,7 +31,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.47 $ $Date: 2014/05/21 22:11:46 $
+# $Revision: 1.48 $ $Date: 2014/05/22 19:35:07 $
 #
 ################################################################################
 

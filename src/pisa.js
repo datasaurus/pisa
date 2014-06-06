@@ -1,6 +1,6 @@
 /*
-   -	xyplot.js --
-   -		This script adds interactive behavior to a plot made by xyplot.
+   -	pisa.js --
+   -		This script adds interactive behavior to a plot made by pisa.
    -
    .	Copyright (c) 2013, Gordon D. Carrie. All rights reserved.
    .
@@ -28,7 +28,7 @@
    .
    .	Please send feedback to dev0@trekix.net
    .
-   .	$Revision: 1.56 $ $Date: 2014/05/23 19:59:37 $
+   .	$Revision: 1.57 $ $Date: 2014/05/23 20:33:58 $
  */
 
 /*
@@ -824,7 +824,7 @@ window.addEventListener("load", function (evt)
 
 	/*
 	   Redraw with javascript. This prevents sudden changes
-	   in the image if the static document produced by xyplot.awk
+	   in the image if the static document produced by pisa.awk
 	   noticeably differs from the Javascript rendition.
 	 */
 
