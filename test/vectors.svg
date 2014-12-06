@@ -1,0 +1,1244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="pisa.css" type="text/css"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+   "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg
+    width="1400.000000"
+    height="1358.000000"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    id="outermost">
+  <title>Vectors</title>
+
+<script type="application/ecmascript" xlink:href="pisa.js" />
+
+<defs>
+  <!-- Plot area rectangle, for clipping and boundary -->
+  <!-- Use a separate rectangle for background, which will be
+       dragged in the plot area coordinate system, not SVG 
+       document coordinates. -->
+  <rect
+      id="PlotRect"
+      width="1236.000000"
+      height="1236.000000" />
+</defs>
+<defs>
+  <!-- Clip path for plot area -->
+  <clipPath id="PlotArea">
+    <use
+        xlink:href="#PlotRect"
+        x="124.000000"
+        y="40.000000" />
+  </clipPath>
+  <!-- Clip path for x axis labels -->
+  <clipPath
+    id="xAxisClip">
+    <rect
+        id="xAxisClipRect"
+        x="100.000000"
+        y="1276.000000"
+        width="1284.000000"
+        height="24.000000"/>
+  </clipPath>
+  <!-- Clip path for y axis labels -->
+  <clipPath
+    id="yAxisClip">
+    <rect
+        id="yAxisClipRect"
+        x="58.000000"
+        y="25.000000"
+        width="66.000000"
+        height="1266.000000" />
+  </clipPath>
+</defs>
+<!-- Clip path and SVG element for plot area -->
+<g clip-path="url(#PlotArea)">
+  <svg
+      id="plot"
+      x="124.000000"
+      y="40.000000"
+      width="1236.000000"
+      height="1236.000000">
+
+<!-- Set user space for Cartesian coordinates -->
+<g id="cartG" transform="matrix(515.000000 0.000000 0.000000 -515.000000 618.000000 618.000000)">
+
+    <!-- Fill in plot area background -->
+    <rect
+        id="plotBackground"
+        x="-1.200000"
+        y="-1.200000"
+        width="2.400000"
+        height="2.400000"
+        fill="white" />
+
+<!-- Define elements in plot area -->
+
+<symbol
+    id="arrow">
+    <g
+        class="arrow"
+        stroke="black"
+        stroke-width="0.020000">
+        <line
+            class="arrow"
+            x1="-0.100000"
+            y1="0.000000"
+            x2="0.100000"
+            y2="0.000000" />
+    </g>
+</symbol>
+<use
+    xlink:href="#arrow"
+    x="0.500000"
+    y="0.000000"
+    />
+<use
+    xlink:href="#arrow"
+    x="0.500000"
+    y="1.000000"
+    />
+<!-- Terminate transform to Cartesian coordinates-->
+</g>
+
+<!-- Done defining elements in plot area -->
+
+
+  <!-- Terminate SVG element for plot area -->
+  </svg>
+
+<!-- Terminate clipping for plot area -->
+</g>
+
+<!-- Draw boundary around plot area -->
+<use
+    id="PlotBoundary"
+    xlink:href="#PlotRect"
+    x="124.000000"
+    y="40.000000"
+    fill="none"
+    stroke="black">
+</use>
+
+<!-- Clip area and svg element for x axis and labels -->
+<g clip-path="url(#xAxisClip)">
+  <svg
+      id="xAxis"
+      x="100.000000"
+      y="1276.000000"
+      width="1284.000000"
+      height="24.000000"
+      viewBox="100.000000 1276.000000 1284.000000 24.000000" >
+  <line
+      class="x axis tick"
+      x1="948.000000"
+      x2="948.000000"
+      y1="1276.000000"
+      y2="1282.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="x axis label"
+      x="948.000000"
+      y="1300.000000"
+      font-size="12.0"
+      text-anchor="middle">
+0.4</text>
+  <line
+      class="x axis tick"
+      x1="1051.000000"
+      x2="1051.000000"
+      y1="1276.000000"
+      y2="1282.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="x axis label"
+      x="1051.000000"
+      y="1300.000000"
+      font-size="12.0"
+      text-anchor="middle">
+0.6</text>
+  <line
+      class="x axis tick"
+      x1="1360.000000"
+      x2="1360.000000"
+      y1="1276.000000"
+      y2="1282.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="x axis label"
+      x="1360.000000"
+      y="1300.000000"
+      font-size="12.0"
+      text-anchor="middle">
+1.2</text>
+  <line
+      class="x axis tick"
+      x1="639.000000"
+      x2="639.000000"
+      y1="1276.000000"
+      y2="1282.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="x axis label"
+      x="639.000000"
+      y="1300.000000"
+      font-size="12.0"
+      text-anchor="middle">
+-0.2</text>
+  <line
+      class="x axis tick"
+      x1="227.000000"
+      x2="227.000000"
+      y1="1276.000000"
+      y2="1282.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="x axis label"
+      x="227.000000"
+      y="1300.000000"
+      font-size="12.0"
+      text-anchor="middle">
+-1</text>
+  <line
+      class="x axis tick"
+      x1="1154.000000"
+      x2="1154.000000"
+      y1="1276.000000"
+      y2="1282.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="x axis label"
+      x="1154.000000"
+      y="1300.000000"
+      font-size="12.0"
+      text-anchor="middle">
+0.8</text>
+  <line
+      class="x axis tick"
+      x1="536.000000"
+      x2="536.000000"
+      y1="1276.000000"
+      y2="1282.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="x axis label"
+      x="536.000000"
+      y="1300.000000"
+      font-size="12.0"
+      text-anchor="middle">
+-0.4</text>
+  <line
+      class="x axis tick"
+      x1="433.000000"
+      x2="433.000000"
+      y1="1276.000000"
+      y2="1282.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="x axis label"
+      x="433.000000"
+      y="1300.000000"
+      font-size="12.0"
+      text-anchor="middle">
+-0.6</text>
+  <line
+      class="x axis tick"
+      x1="124.000000"
+      x2="124.000000"
+      y1="1276.000000"
+      y2="1282.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="x axis label"
+      x="124.000000"
+      y="1300.000000"
+      font-size="12.0"
+      text-anchor="middle">
+-1.2</text>
+  <line
+      class="x axis tick"
+      x1="742.000000"
+      x2="742.000000"
+      y1="1276.000000"
+      y2="1282.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="x axis label"
+      x="742.000000"
+      y="1300.000000"
+      font-size="12.0"
+      text-anchor="middle">
+0</text>
+  <line
+      class="x axis tick"
+      x1="330.000000"
+      x2="330.000000"
+      y1="1276.000000"
+      y2="1282.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="x axis label"
+      x="330.000000"
+      y="1300.000000"
+      font-size="12.0"
+      text-anchor="middle">
+-0.8</text>
+  <line
+      class="x axis tick"
+      x1="1257.000000"
+      x2="1257.000000"
+      y1="1276.000000"
+      y2="1282.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="x axis label"
+      x="1257.000000"
+      y="1300.000000"
+      font-size="12.0"
+      text-anchor="middle">
+1</text>
+  <line
+      class="x axis tick"
+      x1="845.000000"
+      x2="845.000000"
+      y1="1276.000000"
+      y2="1282.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="x axis label"
+      x="845.000000"
+      y="1300.000000"
+      font-size="12.0"
+      text-anchor="middle">
+0.2</text>
+  </svg>
+</g>
+
+<text
+    id="xTitle"
+    class="x axis label"
+    x="742.000000"
+    y="1318.000000"
+    font-size="12.0"
+    text-anchor="middle">The abscissa</text>
+<!-- Clip area and svg element for y axis and labels -->
+<g
+    clip-path="url(#yAxisClip)">
+  <svg
+    id="yAxis"
+    x="58.000000"
+    y="25.000000"
+    width="66.000000"
+    height="1266.000000"
+    viewBox="58.000000 25.000000 66.000000 1266.000000">
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="529.250000"
+      y2="529.250000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="529.250000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.25</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="735.250000"
+      y2="735.250000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="735.250000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.15</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="426.250000"
+      y2="426.250000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="426.250000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.45</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="838.250000"
+      y2="838.250000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="838.250000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.35</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="323.250000"
+      y2="323.250000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="323.250000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.65</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="1173.000000"
+      y2="1173.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="1173.000000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-1</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="941.250000"
+      y2="941.250000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="941.250000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.55</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="220.250000"
+      y2="220.250000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="220.250000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.85</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="1044.250000"
+      y2="1044.250000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="1044.250000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.75</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="606.500000"
+      y2="606.500000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="606.500000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.1</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="555.000000"
+      y2="555.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="555.000000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.2</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="503.500000"
+      y2="503.500000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="503.500000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.3</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="452.000000"
+      y2="452.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="452.000000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.4</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="400.500000"
+      y2="400.500000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="400.500000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.5</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="349.000000"
+      y2="349.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="349.000000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.6</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="1147.250000"
+      y2="1147.250000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="1147.250000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.95</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="297.500000"
+      y2="297.500000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="297.500000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.7</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="246.000000"
+      y2="246.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="246.000000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.8</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="194.500000"
+      y2="194.500000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="194.500000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.9</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="658.000000"
+      y2="658.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="658.000000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="143.000000"
+      y2="143.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="143.000000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">1</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="65.750000"
+      y2="65.750000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="65.750000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">1.15</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="1198.750000"
+      y2="1198.750000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="1198.750000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-1.05</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="91.500000"
+      y2="91.500000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="91.500000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">1.1</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="40.000000"
+      y2="40.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="40.000000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">1.2</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="580.750000"
+      y2="580.750000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="580.750000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.15</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="683.750000"
+      y2="683.750000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="683.750000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.05</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="477.750000"
+      y2="477.750000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="477.750000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.35</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="786.750000"
+      y2="786.750000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="786.750000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.25</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="374.750000"
+      y2="374.750000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="374.750000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.55</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="709.500000"
+      y2="709.500000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="709.500000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.1</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="761.000000"
+      y2="761.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="761.000000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.2</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="812.500000"
+      y2="812.500000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="812.500000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.3</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="864.000000"
+      y2="864.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="864.000000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.4</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="889.750000"
+      y2="889.750000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="889.750000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.45</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="271.750000"
+      y2="271.750000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="271.750000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.75</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="915.500000"
+      y2="915.500000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="915.500000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.5</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="967.000000"
+      y2="967.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="967.000000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.6</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="1018.500000"
+      y2="1018.500000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="1018.500000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.7</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="1070.000000"
+      y2="1070.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="1070.000000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.8</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="1121.500000"
+      y2="1121.500000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="1121.500000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.9</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="992.750000"
+      y2="992.750000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="992.750000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.65</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="168.750000"
+      y2="168.750000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="168.750000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.95</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="1095.750000"
+      y2="1095.750000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="1095.750000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-0.85</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="1224.500000"
+      y2="1224.500000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="1224.500000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-1.1</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="1276.000000"
+      y2="1276.000000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="1276.000000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-1.2</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="117.250000"
+      y2="117.250000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="117.250000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">1.05</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="632.250000"
+      y2="632.250000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="632.250000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">0.05</text>
+  <line
+      class="y axis tick"
+      x1="118.000000"
+      x2="124.000000"
+      y1="1250.250000"
+      y2="1250.250000"
+      stroke="black"
+      stroke-width="1" />
+  <text
+      class="y axis label"
+      x="118.000000"
+      y="1250.250000"
+      font-size="12.0"
+      text-anchor="end"
+      dominant-baseline="mathematical">-1.15</text>
+  </svg>
+</g>
+
+<g
+    id="yTitleTransform"
+    transform="matrix(0.0, -1.0, 1.0, 0.0, 52.0, 658.0)">
+<text
+    id="yTitle"
+    class="y axis label"
+    x="0.0"
+    y="0.0"    font-size="12.0"
+    text-anchor="middle">The ordinate</text>
+</g>
+<svg
+    id="zoom_in"
+    class="interactive"
+    visibility="hidden"
+    display="none"
+    x="0.0"
+    y="0.0"
+    width="24.0"
+    height="24.0">
+    <rect
+        class="interactive"
+        visibility="hidden"
+        display="none"
+        x="1.0"
+        y="1.0"
+        width="22"
+        height="22"
+        stroke="black"
+        stroke-width="1"
+        fill="white" />
+    <circle
+        class="interactive"
+        visibility="hidden"
+        display="none"
+        cx="12.0"
+        cy="12.0"
+        r="6"
+        stroke="black"
+        stroke-width="1"
+        fill="none" />
+    <line
+        class="interactive"
+        visibility="hidden"
+        display="none"
+        x1="16.2426"
+        y1="16.2426"
+        x2="21.0"
+        y2="21.0"
+        stroke="black"
+        stroke-width="1"
+        fill="none" />
+    <text
+        class="interactive"
+        visibility="hidden"
+        display="none"
+        x="12"
+        y="12"
+        cursor="default"
+        text-anchor="middle"
+        dominant-baseline="mathematical"
+        font-size="9"
+        stroke="black"
+        stroke-width="1"
+        fill="none">
++
+	</text>
+</svg>
+<svg
+    id="zoom_out"
+    class="interactive"
+    visibility="hidden"
+    display="none"
+    x="24.0"
+    y="0.0"
+    width="24.0"
+    height="24.0">
+    <rect
+        class="interactive"
+        visibility="hidden"
+        display="none"
+        x="1.0"
+        y="1.0"
+        width="22"
+        height="22"
+        stroke="black"
+        stroke-width="1"
+        fill="white" />
+    <circle
+        class="interactive"
+        visibility="hidden"
+        display="none"
+        cx="12.0"
+        cy="12.0"
+        r="6"
+        stroke="black"
+        stroke-width="1"
+        fill="none" />
+    <line
+        class="interactive"
+        visibility="hidden"
+        display="none"
+        x1="16.2426"
+        y1="16.2426"
+        x2="21.0"
+        y2="21.0"
+        stroke="black"
+        stroke-width="1"
+        fill="none" />
+    <text
+        class="interactive"
+        visibility="hidden"
+        display="none"
+        x="12"
+        y="12"
+        cursor="default"
+        text-anchor="middle"
+        dominant-baseline="mathematical"
+    	font-size="9"
+        stroke="black"
+        stroke-width="1"
+        fill="none">
+-
+	</text>
+</svg>
+<svg
+    id="print"
+    class="interactive"
+    visibility="hidden"
+        display="none"
+    x="48"
+    y="0"
+    width="60.0"
+    height="24.0">
+    <rect
+        class="interactive"
+        visibility="hidden"
+        display="none"
+        x="1.0"
+        y="1.0"
+        width="58"
+        height="22"
+        stroke="black"
+        stroke-width="1"
+        fill="white" />
+    <text
+        class="interactive"
+        visibility="hidden"
+        display="none"
+        x="30"
+        y="18"
+        cursor="default"
+        text-anchor="middle"
+        font-size="12"
+        stroke="black" >
+   PRINT
+    </text>
+</svg>
+
+<text x="740" y="20">HELLO</text>
+</svg>

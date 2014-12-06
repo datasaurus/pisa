@@ -1,0 +1,14 @@
+#plotBackground {
+    fill: white;
+}
+.label {
+    font-size: 18px;
+}
+#sinx2 {
+    stroke: #603;
+    fill: none;
+}
+#expm {
+    stroke: blue;
+    fill: none;
+}
