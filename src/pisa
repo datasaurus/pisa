@@ -1,40 +1,7 @@
 #!/bin/sh
 #
 # This script creates an SVG document with a Cartesian plot, axes, labels,
-# and optional elements.
-#
-# Usage:
-#	pisa [-d title] [-l pixels] [-r pixels] [-t pixels] [-b pixels]
-#		[-w pixels] [-h pixels] [-f pixels] [-m precison] [-n precison]
-#		[-X string] [-Y string]
-#		[-p prefix_file] [-s suffix_file] [-y style_sheet]
-#		x_left x_rght y_btm y_top
-# where:
-#	-d		title of document svg element
-#	-l		left margin, pixels.
-#	-r		right margin, pixels.
-#	-t		top margin, pixels.
-#	-b		bottom margin, pixels.
-#	-w		document width, pixels.
-#	-h		document height, pixels.
-#	-f		font size, pixels. Set as an attribute.
-#	-m		number of significant figures in x axis labels.
-#	-n		number of significant figures in y axis labels.
-#	-X		x axis title
-#	-Y		y axis title
-#	-p		File with SVG code rendered before, or under, the
-#			plot document coordinates (pixels). Could also be
-#			meta data, such as links to script files.
-#	-s		File with SVG code rendered after, or on top of, the
-#			plot such as axis labels, legends, and captions, using
-#			document coordinates (pixels).
-#	-y		path to a CSS style sheet
-#	x_left		Cartesian x coordinate of left side of plot.
-#	x_rght		Cartesian x coordinate of right side of plot.
-#	y_btm		Cartesian y coordinate of bottom of plot.
-#	y_top		Cartesian y coordinate of top of plot.
-#
-########################################################################
+# and optional elements.  See pisa (1).
 #
 # Copyright (c) 2013 Gordon D. Carrie
 # 
@@ -58,7 +25,7 @@
 #
 # Please send feedback to dev0@trekix.net
 #
-# $Revision: 1.16 $ $Date: 2014/05/21 22:10:44 $
+# $Revision: 1.17 $ $Date: 2014/06/06 17:11:18 $
 #
 ########################################################################
 

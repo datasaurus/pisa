@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+#	polyline --
+#		Read points for a line. Print same with svg code.
+#
+#	Usage:
+#		polyline [attribute="value" ...]
+#
+#	Attribute list will be appended to start tag. It should be given as
+#	one single quoted argument.
+
+# Print element begin tag
+printf '<polyline %s ' "$*"
+printf ' points="\n'
+
+# Pass input to output
+cat
+
+# Print element end tag
+printf '"\n/>\n'
