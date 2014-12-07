@@ -1,7 +1,10 @@
 The pisa application creates a Cartesian plot in an SVG document.
 Elements defined with Cartesian coordinates are read from standard
-input and placed in the plot, with axes and labels. An optional
-Javascript file adds interactivity. Otherwise, the program creates
-standard, static SVG files, which can be edited with Inkscape or
-converted to other formats with ImageMagick or rsvg-convert. For more
+input and placed in the plot. Pisa makes the necessary transformations
+from Caresian to document coordinates. It also draws suitable axes and
+labels. An optional Javascript file adds interactivity, for panning
+and zooming in web browsers. Without interactivity, the program creates
+standard, static SVG files, which can be edited with Inkscape or converted
+to other formats with ImageMagick, rsvg-convert, or similar.  For more
 information see pisa (1) man page.
+
