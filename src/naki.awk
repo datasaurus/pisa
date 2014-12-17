@@ -59,7 +59,7 @@ BEGIN {
 
 /^\s*stroke-width\s+/ {
     if ( NF != 2 ) {
-	printf "No value given for scale\n" > err;
+	printf "No value given for line width.\n" > err;
 	exit 1;
     }
     stroke_width = $2;
@@ -77,17 +77,26 @@ BEGIN {
     scale = $2;
     printf "<symbol\n";
     printf "    id=\"arrow\">\n";
-    printf "    <g\n";
-    printf "        class=\"arrow\"\n";
-    printf "        stroke=\"black\"\n";
-    printf "        stroke-width=\"%f\">\n", stroke_width;
-    printf "        <line\n";
-    printf "            class=\"arrow\"\n";
-    printf "            x1=\"%f\"\n", -0.5 * scale;
-    printf "            y1=\"%f\"\n", 0.0;
-    printf "            x2=\"%f\"\n", 0.5 * scale;
-    printf "            y2=\"%f\" />\n", 0.0;
-    printf "    </g>\n";
+    printf "  <g\n";
+    printf "      class=\"arrow\"\n";
+    printf "      stroke=\"black\"\n";
+    printf "      stroke-width=\"%f\">\n", stroke_width;
+    printf "    <line\n";
+    printf "        x1=\"%f\"\n", -0.5 * scale;
+    printf "        y1=\"%f\"\n", 0.0;
+    printf "        x2=\"%f\"\n", 0.5 * scale;
+    printf "        y2=\"%f\" />\n", 0.0;
+    printf "    <line\n";
+    printf "        x1=\"%f\"\n", 0.5 * scale;
+    printf "        y1=\"%f\"\n", 0.0;
+    printf "        x2=\"%f\"\n", 0.0;
+    printf "        y2=\"%f\" />\n", 0.25 * scale;
+    printf "    <line\n";
+    printf "        x1=\"%f\"\n", 0.5 * scale;
+    printf "        y1=\"%f\"\n", 0.0;
+    printf "        x2=\"%f\"\n", 0.0;
+    printf "        y2=\"%f\" />\n", -0.25 * scale;
+    printf "  </g>\n";
     printf "</symbol>\n";
 }
 
