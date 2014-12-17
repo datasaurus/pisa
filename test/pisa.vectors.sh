@@ -1,8 +1,8 @@
 #!/bin/sh
 
 printf '
-stroke-width 0.02
-scale 0.2
+stroke-width 0.005
+scale 0.02
 p 0.5 0.0 2.0 0.0
 p 0.5 1.0 1.0 1.0
 ' \
