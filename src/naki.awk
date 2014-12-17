@@ -35,8 +35,6 @@
 #
 ################################################################################
 #
-# xlink namespace must be invoked.
-#
 # Standard input must include:
 #
 #	scale float
@@ -57,7 +55,7 @@ BEGIN {
     err = "/dev/stderr";
 }
 
-/^\s*stroke-width\s+/ {
+/^[ 	]*stroke-width[ 	]+/ {
     if ( NF != 2 ) {
 	printf "No value given for line width.\n" > err;
 	exit 1;
@@ -65,7 +63,7 @@ BEGIN {
     stroke_width = $2;
 }
 
-/^\s*scale\s+/ {
+/^[ 	]*scale[ 	]+/ {
     if ( stroke_width == 0.0 ) {
 	printf "Stroke width must be given before scale.\n" > err;
 	exit 1;
@@ -75,32 +73,19 @@ BEGIN {
 	exit 1;
     }
     scale = $2;
-    printf "<symbol\n";
-    printf "    id=\"arrow\">\n";
-    printf "  <g\n";
-    printf "      class=\"arrow\"\n";
-    printf "      stroke=\"black\"\n";
-    printf "      stroke-width=\"%f\">\n", stroke_width;
-    printf "    <line\n";
-    printf "        x1=\"%f\"\n", -0.5 * scale;
-    printf "        y1=\"%f\"\n", 0.0;
-    printf "        x2=\"%f\"\n", 0.5 * scale;
-    printf "        y2=\"%f\" />\n", 0.0;
-    printf "    <line\n";
-    printf "        x1=\"%f\"\n", 0.5 * scale;
-    printf "        y1=\"%f\"\n", 0.0;
-    printf "        x2=\"%f\"\n", 0.0;
-    printf "        y2=\"%f\" />\n", 0.25 * scale;
-    printf "    <line\n";
-    printf "        x1=\"%f\"\n", 0.5 * scale;
-    printf "        y1=\"%f\"\n", 0.0;
-    printf "        x2=\"%f\"\n", 0.0;
-    printf "        y2=\"%f\" />\n", -0.25 * scale;
-    printf "  </g>\n";
-    printf "</symbol>\n";
+    printf "<defs>\n";
+    printf "  <marker\n";
+    printf "      id=\"arrow\" class=\"arrow\"\n";
+    printf "      viewBox=\"0 0 10 10\"\n";
+    printf "      refX=\"0\"\n";
+    printf "      refY=\"5\"\n";
+    printf "      orient=\"auto\">\n";
+    printf "      <path d=\"M 0 0 L 10 5 L 0 10 z\" />\n";
+    printf "  </marker>\n";
+    printf "</defs>\n\n";
 }
 
-/^\s*p\s+/ {
+/^[ 	]*p[ 	]+/ {
     if ( NF != 5 ) {
 	printf "Point must have x y u v\n" > err;
 	exit 1;
@@ -109,10 +94,13 @@ BEGIN {
     y = $3;
     u = $4;
     v = $5;
-    printf "<use\n";
-    printf "    xlink:href=\"#arrow\"\n";
-    printf "    x=\"%f\"\n", x;
-    printf "    y=\"%f\"\n", y;
-    printf "    transform=\"matrix(%f %f %f %f %f %f)\" />\n",
-	   u, v, -v, u, 0.0, 0.0;
+    printf "<line\n";
+    printf "    x1=\"%f\"\n", x - 0.5 * scale * u;
+    printf "    y1=\"%f\"\n", y - 0.5 * scale * v;
+    printf "    x2=\"%f\"\n", x + 0.5 * scale * u;
+    printf "    y2=\"%f\"\n", y + 0.5 * scale * v;
+    printf "    stroke=\"black\"";
+    printf "    stroke-width=\"%f\"", stroke_width;
+    printf "    marker-end=\"url(#arrow)\"";
+    printf " />\n";
 }
