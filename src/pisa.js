@@ -42,11 +42,8 @@ window.addEventListener("load", function (evt)
 	"use strict";
 	/*jslint browser:true */
 
-	/*
-	 *************************************************************
-	 ****************** Adjust these variables. ******************
-	 *************************************************************
-	 */
+	var svgNs = "http://www.w3.org/2000/svg";
+	var xlinkNs="http://www.w3.org/1999/xlink";
 
 	/* Lengths of axis tick marks, pixels */
 	var tick = (document.getElementsByClassName("x axis tick"))[0];
@@ -58,9 +55,18 @@ window.addEventListener("load", function (evt)
 	/* Padding between label elements */
 	var pad;
 
-	/* Number of significant digits in axis labels */
+	/*
+	   Number of significant digits in axis labels. Convenience function
+	   to_prx x with precision prx, removing trailing "." and 0's
+	*/
 	var x_prx = 3;
 	var y_prx = 3;
+	function to_prx(x, prx)
+	{
+	    var s = x.toPrecision(prx);
+	    s = s.replace(/0+$/, "");
+	    return s.replace(/\.?$/, "");
+	}
 
 	/*
 	   If keep_margins is true, plot will resize with window to preserve
@@ -69,13 +75,7 @@ window.addEventListener("load", function (evt)
 
 	var keep_margins = true;
 
-	/*
-	 *************************************************************
-	 ******* Everything below here should not change much. *******
-	 *************************************************************
-	 */
-
-	/* These objects store information about the plot elements */
+	/* Plot element objects */
 	var root = document.rootElement;
 	var plot = document.getElementById("plot");
 	var plotArea = document.getElementById("PlotRect");
@@ -88,17 +88,7 @@ window.addEventListener("load", function (evt)
 	var yAxisClip = document.getElementById("yAxisClipRect");
 	var yTitle = document.getElementById("yTitle");
 	var yTitleXForm = document.getElementById("yTitleTransform");
-	var zoom_in = document.getElementById("zoom_in");
-	var zoom_out = document.getElementById("zoom_out");
 	var print = document.getElementById("print");
-
-	/*
-	   Axis labels are allowed to extend beyond plot edge by
-	   xOverHang and yOverHang pixels.
-	 */
-
-	var xOverHang = xAxis.width.baseVal.value - plot.width.baseVal.value;
-	var yOverHang = yAxis.height.baseVal.value - plot.height.baseVal.value;
 
 	/*
 	   Axis labels:
@@ -111,15 +101,23 @@ window.addEventListener("load", function (evt)
 	var x_labels = [];
 	var y_labels = [];
 
-	var svgNs = "http://www.w3.org/2000/svg";
-	var xlinkNs="http://www.w3.org/1999/xlink";
+	/*
+	   Root element dimensions and margins around plot.
+	   These will be needed if root element resizes.
+	   rootWidth and rootHght might change. Margins will be preserved.
+	 */
+
+	var rootWidth = root.width.baseVal.value;
+	var rootHght = root.height.baseVal.value;
+	var leftMgn = plot.x.baseVal.value;
+	var rghtMgn = rootWidth - leftMgn - plot.width.baseVal.value;
+	var topMgn = plot.y.baseVal.value;
+	var btmMgn = rootHght - topMgn - plot.height.baseVal.value;
 
 	/*
+	   Coordinates of plot elements before and during drag events.
 	   start_plot_drag, plot_drag, and end_plot_drag event handlers,
-	   defined below, enable user to drag Cartesian plot and axes with
-	   the mouse. These variables store information in this scope about
-	   the initial positions of the plot elements and about the current
-	   drag.
+	   defined below, need them.
 	 */
 
 	var plotSVGX, plotSVGY;		/* SVG coordinates of plot element */
@@ -137,28 +135,290 @@ window.addEventListener("load", function (evt)
 	yAxisSVGX = yAxis.x.baseVal.value;
 	yAxisSVGY = yAxis.y.baseVal.value;
 
+	/* Distances axis labels can go beyond plot edges, pixels */ 
+	var xOverHang = xAxis.width.baseVal.value - plot.width.baseVal.value;
+	var yOverHang = yAxis.height.baseVal.value - plot.height.baseVal.value;
+
 	/*
-	   Record root element dimensions and margins around plot.
-	   These will be needed if root element resizes.
-	   rootWidth and rootHght might change. Margins will be preserved.
+	   Make "interactive" elements visible. pisa.awk initializes them as
+	   invisible so that they do not clutter static SVG documents.
 	 */
 
-	var rootWidth = root.width.baseVal.value;
-	var rootHght = root.height.baseVal.value;
-	var leftMgn = plot.x.baseVal.value;
-	var rghtMgn = rootWidth - leftMgn - plot.width.baseVal.value;
-	var topMgn = plot.y.baseVal.value;
-	var btmMgn = rootHght - topMgn - plot.height.baseVal.value;
-
-	/* Local function definitions */
+	var e, elems = document.getElementsByClassName("interactive");
+	for (e = 0; e < elems.length; e++) {
+	    elems[e].setAttribute("visibility", "visible");
+	    elems[e].setAttribute("display", "inline");
+	}
 
 	/*
-	   This function gets limits of the plot area in Cartesian coordinates.
+	   Create a text element that displays the Cartesian coordinates
+	   of the cursor location.
+	 */
+
+	var cursor_loc = document.createElementNS(svgNs, "text");
+	cursor_loc.setAttribute("x", "120");
+	cursor_loc.setAttribute("y", "4");
+	cursor_loc.setAttribute("dominant-baseline", "hanging");
+	cursor_loc.textContent = "x y";
+	root.appendChild(cursor_loc);
+	function update_cursor_loc(evt)
+	{
+	    var x = svg_x_to_cart(evt.clientX);
+	    var y = svg_y_to_cart(evt.clientY);
+	    var txt = "Cursor: " + to_prx(x, x_prx) + " " + to_prx(y, x_prx);
+	    cursor_loc.textContent = txt;
+	}
+	plot.addEventListener("mousemove", update_cursor_loc, false);
+
+	/*
+	   Enable zoom buttons.
+
+	   zoom_plot applies zoom factor s to the plot.
+	   s < 0 => zooming in, s > 0 => zooming out.
+
+	   zoom_attrs negates zooming in lines and markers so they do not
+	   become fat or thin as user zooms in or out.
+	 */
+
+	var zoom_in = document.getElementById("zoom_in");
+	var zoom_out = document.getElementById("zoom_out");
+	function zoom_plot(s)
+	{
+	    var dx, dy, corner;
+	    var cart = get_cart();
+
+	    /*
+	       If origin is at a corner, zoom about it.
+	       Otherwise, zoom about center.
+	     */
+
+	    dx = Math.abs(cart.rght - cart.left) / 128.0;
+	    dy = Math.abs(cart.top - cart.btm) / 128.0;
+	    corner = ( (Math.abs(cart.left) < dx || Math.abs(cart.rght) < dx)
+		    && (Math.abs(cart.btm) < dy || Math.abs(cart.top) < dy) );
+	    if ( corner ) {
+		cart.left *= s;
+		cart.rght *= s;
+		cart.btm *= s;
+		cart.top *= s;
+	    } else {
+		dx = (cart.rght - cart.left) * (1.0 - s) / 2.0;
+		cart.left += dx;
+		cart.rght -= dx;
+		dy = (cart.top - cart.btm) * (1.0 - s) / 2.0;
+		cart.btm += dy;
+		cart.top -= dy;
+	    }
+	    setXform(cart);
+	    for (var c = 0; c < plot.childNodes.length; c++) {
+		zoom_attrs(plot.childNodes[c], s);
+	    }
+	    update_background();
+	    update_axes();
+	}
+	function zoom_attrs(elem, s)
+	{
+	    if ( elem.nodeType == Node.ELEMENT_NODE ) {
+		var attrs = ["stroke-width", "stroke-dashoffset",
+		    "markerWidth", "markerHeight"];
+		for (var n = 0; n < attrs.length; n++) {
+		    var a = Number(elem.getAttribute(attrs[n]));
+		    if ( a && a > 0.0 ) {
+			elem.setAttribute(attrs[n], a * s);
+		    }
+		}
+		a = Number(elem.getAttribute("stroke-dasharray"));
+		if ( a ) {
+		    var dash, dashes = "";
+		    for (dash in a.split(/\s+|,/)) {
+			dashes = dashes + " " + Number(dash) * s;
+		    }
+		    elem.setAttribute("stroke-dasharray", dashes);
+		}
+	    }
+	    var children = elem.childNodes;
+	    for (var c = 0; c < children.length; c++) {
+		zoom_attrs(children[c], s);
+	    }
+	}
+	zoom_in.addEventListener("click",
+		function (evt) { zoom_plot(3.0 / 4.0); }, false);
+	zoom_out.addEventListener("click", 
+		function (evt) { zoom_plot(4.0 / 3.0); }, false);
+
+	/* Enable the print button */
+	print.addEventListener("click", function (evt)
+	{
+		root.removeChild(zoom_in);
+		root.removeChild(zoom_out);
+		root.removeChild(print);
+		root.removeChild(cursor_loc);
+		window.print();
+		window.setTimeout(function () {
+		    root.appendChild(zoom_in);
+		    root.appendChild(zoom_out);
+		    root.appendChild(print);
+		    root.appendChild(cursor_loc);
+		    }, 500.0);
+		}, false);
+
+	/*
+	   If desired, arrange to resize plot to preserve margins if
+	   window resizes.
+	*/
+
+	function resize(evt)
+	{
+	    var innerWidth = this.innerWidth;
+	    var innerHeight = this.innerHeight;
+
+	    var currRootWidth = root.width.baseVal.value;
+	    var currRootHeight = root.height.baseVal.value;
+	    var newRootWidth = innerWidth;
+	    var newRootHeight = innerHeight;
+
+	    var currPlotWidth = plot.width.baseVal.value;
+	    var currPlotHeight = plot.height.baseVal.value;
+	    var newPlotWidth = newRootWidth - leftMgn - rghtMgn;
+	    var newPlotHeight = newRootHeight - topMgn - btmMgn;
+
+	    var cart = get_cart();
+	    var mPerPx;
+	    var delta, dx, dy, corner;
+
+	    /*
+	       If origin is at a corner, zoom about it.
+	       Otherwise, zoom about center.
+	     */
+
+	    dx = Math.abs(cart.rght - cart.left) / 128.0;
+	    dy = Math.abs(cart.top - cart.btm) / 128.0;
+	    corner = ( (Math.abs(cart.left) < dx || Math.abs(cart.rght) < dx)
+		    && (Math.abs(cart.btm) < dy || Math.abs(cart.top) < dy) );
+	    if ( corner ) {
+		delta = newRootWidth / currRootWidth;
+		cart.left *= delta;
+		cart.rght *= delta;
+		delta = newRootHeight / currRootHeight;
+		cart.btm *= delta;
+		cart.top *= delta;
+	    } else {
+		mPerPx = (cart.rght - cart.left) / currPlotWidth;
+		delta = (newRootWidth - currRootWidth) * mPerPx;
+		cart.left -= delta / 2;
+		cart.rght += delta / 2;
+		mPerPx = (cart.top - cart.btm) / currPlotHeight;
+		delta = (newRootHeight - currRootHeight) * mPerPx;
+		cart.top += delta / 2;
+		cart.btm -= delta / 2;
+	    }
+
+	    /* Adjust plot rectangle */
+	    root.setAttribute("width", newRootWidth);
+	    root.setAttribute("height", newRootHeight);
+	    plot.setAttribute("width", newPlotWidth);
+	    plot.setAttribute("height", newPlotHeight);
+	    plotArea.setAttribute("width", newPlotWidth);
+	    plotArea.setAttribute("height", newPlotHeight);
+
+	    setXform(cart);
+	    update_background();
+	    update_axes();
+	}
+	if ( keep_margins ) {
+	    this.addEventListener("resize", resize, true);
+	}
+
+	/*
+	   Enable plot dragging.
+
+	   start_plot_drag is called at mouse down. It records the location of
+	   the plot in its parent as members x0 and y0. It records the initial
+	   cursor location in dragSVGX0 and dragSVGY0, which remain constant
+	   throughout the drag. It also records the cursor location in members
+	   prevEvtSVGX and prevEvtSVGY, which change at every mousemove during the
+	   drag.
+
+	   plot_drag is called at each mouse move while the plot is being
+	   dragged. It determines how much the mouse has moved since the last
+	   event, and shifts the dragable elements by that amount.
+
+	   end_plot_drag is called at mouse up. It determines how much the
+	   viewBox has changed since the start of the drag. It restores dragged
+	   elements to their initial coordinates, plotSVGX, plotSVGY, but with a
+	   new shifted viewBox.
+	 */
+
+	function start_plot_drag(evt)
+	{
+	    prevEvtSVGX = dragSVGX0 = evt.clientX;
+	    prevEvtSVGY = dragSVGY0 = evt.clientY;
+	    plot.addEventListener("mousemove", plot_drag, false);
+	    plot.addEventListener("mouseup", end_plot_drag, false);
+	}
+	function plot_drag(evt)
+	{
+	    var dx, dy;			/* How much to move the elements */
+
+	    dx = evt.clientX - prevEvtSVGX;
+	    dy = evt.clientY - prevEvtSVGY;
+	    plot.setAttribute("x", plot.x.baseVal.value + dx);
+	    plot.setAttribute("y", plot.y.baseVal.value + dy);
+	    xAxis.setAttribute("x", xAxis.x.baseVal.value + dx);
+	    yAxis.setAttribute("y", yAxis.y.baseVal.value + dy);
+	    prevEvtSVGX = evt.clientX;
+	    prevEvtSVGY = evt.clientY;
+	}
+	function end_plot_drag(evt)
+	{
+	    /*
+	       Compute total distance dragged, in CARTESIAN coordinates, and
+	       move plot viewBox by this amount
+	     */
+
+	    var plotWidth, plotHeight;	/* SVG dimensions of plot area */
+	    var cart;			/* Cartesian dimensions of plot area */
+	    var mPerPx;			/* Convert Cartesian distance to SVG */
+	    var dx, dy;			/* Drag distance in Cartesian
+					   coordinates */
+
+	    cart = get_cart();
+	    plotWidth = plot.width.baseVal.value;
+	    mPerPx = (cart.rght - cart.left) / plotWidth;
+	    dx = (dragSVGX0 - evt.clientX) * mPerPx;
+	    cart.left += dx;
+	    cart.rght += dx;
+	    plotHeight = plot.height.baseVal.value;
+	    mPerPx = (cart.btm - cart.top) / plotHeight;
+	    dy = (dragSVGY0 - evt.clientY) * mPerPx;
+	    cart.btm += dy;
+	    cart.top += dy;
+	    setXform(cart);
+
+	    /*
+	       Restore plot and background to their position at start of drag.
+	       Elements in the plot will remain in the positions they were
+	       dragged to because of the adjments to the viewBox.
+	     */
+
+	    plot.setAttribute("x", plotSVGX);
+	    plot.setAttribute("y", plotSVGY);
+
+	    update_background();
+	    update_axes();
+
+	    plot.removeEventListener("mousemove", plot_drag, false);
+	    plot.removeEventListener("mouseup", end_plot_drag, false);
+	}
+	plot.addEventListener("mousedown", start_plot_drag, false);
+
+	/*
+	   Get the limits of the plot area in Cartesian coordinates.
 	   Return value is an object with the following members:
-	   .	left = x coordinate at left edge of plot area.
-	   .	rght = x coordinate at right edge of plot area.
-	   .	top = y coordinate at top edge of plot area.
-	   .	btm = y coordinate at bottom edge of plot area.
+	   .	left = Cartesian x coordinate at left edge of plot area.
+	   .	rght = Cartesian x coordinate at right edge of plot area.
+	   .	top = Cartesian y coordinate at top edge of plot area.
+	   .	btm = Cartesian y coordinate at bottom edge of plot area.
 	 */
 
 	function get_cart()
@@ -178,9 +438,9 @@ window.addEventListener("load", function (evt)
 
 	/*
 	   Set transform for plot area in Cartesian coordinates from cart,
-	   which is an object with the same members as the return value
-	   from get_cart. This only modifies the <g ...> element that
-	   provides the transform. It does not redraw the axes.
+	   which should be a return value from get_cart. This only modifies
+	   the <g ...> element that provides the transform. It does not redraw
+	   the background or axes.
 	 */
 
 	function setXform(cart)
@@ -196,52 +456,144 @@ window.addEventListener("load", function (evt)
 	    xForm.f = plotHeight * cart.top / (cart.top - cart.btm);
 	}
 
-	/* Convert Cartesian x to SVG x */
-	function cart_x_to_svg(cartX)
+	/* Draw the background */
+	function update_background()
 	{
-	    var xLeftSVG = plot.x.baseVal.value;
-	    var plotWidth = plot.width.baseVal.value;
 	    var cart = get_cart();
-	    var pxPerM = plotWidth / (cart.rght - cart.left);
-	    return xLeftSVG + (cartX - cart.left) * pxPerM;
+	    if ( cart.left < cart.rght ) {
+		plotBackground.setAttribute("x", cart.left);
+		plotBackground.setAttribute("width", cart.rght - cart.left);
+	    } else {
+		plotBackground.setAttribute("x", cart.rght);
+		plotBackground.setAttribute("width", cart.left - cart.rght);
+	    }
+	    if ( cart.btm < cart.top ) {
+		plotBackground.setAttribute("y", cart.btm);
+		plotBackground.setAttribute("height", cart.top - cart.btm);
+	    } else {
+		plotBackground.setAttribute("y", cart.top);
+		plotBackground.setAttribute("height", cart.btm - cart.top);
+	    }
 	}
 
-	/* Convert SVG x Cartesian x */
-	function svg_x_to_cart(svgX)
+	/* Apply tick marks and labels to axes. */
+	function update_axes()
 	{
-	    var xLeftSVG = plot.x.baseVal.value;
-	    var plotWidth = plot.width.baseVal.value;
-	    var cart = get_cart();
-	    var mPerPx = (cart.rght - cart.left) / plotWidth;
-	    return cart.left + (svgX - xLeftSVG) * mPerPx;
+	    var viewBox;		/* Axis viewBox */
+	    var plotWidth;		/* Plot width, SVG coordinates */
+	    var plotHeight;		/* Plot height, SVG coordinates */
+	    var axisWidth;		/* Axis width, SVG coordinates */
+	    var axisHeight;		/* Axis height, SVG coordinates */
+	    var cart;			/* Limits of plot in Cartesian
+					   coordinates */
+	    var xForm;			/* Transform to rotate y axis title */
+	    var lbl;			/* Label text element */
+	    var bbox;			/* Bounding box for lbl */
+
+	    plotWidth = plot.width.baseVal.value;
+	    plotHeight = plot.height.baseVal.value;
+	    cart = get_cart();
+
+	    /* Update font size and padding */
+	    lbl = document.getElementsByClassName("x axis label")[0];
+	    bbox = lbl.getBBox();
+	    font_sz = bbox.height;
+	    pad = xAxis.height.baseVal.value - tick_len - font_sz;
+
+	    /* Restore x axis position and update viewBox */
+	    xAxis.setAttribute("x", xAxisSVGX);
+	    xAxisSVGY = plotSVGY + plotHeight;
+	    xAxis.setAttribute("y", xAxisSVGY);
+	    axisWidth = plotWidth + xOverHang;
+	    axisHeight = xAxis.viewBox.baseVal.height;
+	    xAxis.setAttribute("width", axisWidth);
+	    xAxisClip.setAttribute("y", xAxisSVGY);
+	    xAxisClip.setAttribute("width", axisWidth);
+	    viewBox = xAxisSVGX;
+	    viewBox += " " + xAxisSVGY;
+	    viewBox += " " + axisWidth;
+	    viewBox += " " + axisHeight;
+	    xAxis.setAttribute("viewBox", viewBox);
+	    xTitle.setAttribute("x", xAxisSVGX + axisWidth / 2.0);
+	    xTitle.setAttribute("y", xAxisSVGY + axisHeight + pad + font_sz);
+
+	    /* Create new labels for x axis */
+	    mk_labels(cart.left, cart.rght, apply_x_coords, plotWidth / 4);
+
+	    /* Restore y axis position and update viewBox */
+	    yAxis.setAttribute("y", yAxisSVGY);
+	    axisWidth = yAxis.viewBox.baseVal.width;
+	    axisHeight = plotHeight + yOverHang;
+	    yAxis.setAttribute("height", axisHeight);
+	    yAxisClip.setAttribute("height", axisHeight);
+	    viewBox = yAxis.viewBox.baseVal.x;
+	    viewBox += " " + yAxisSVGY;
+	    viewBox += " " + axisWidth;
+	    viewBox += " " + axisHeight;
+	    yAxis.setAttribute("viewBox", viewBox);
+	    xForm = yTitleXForm.transform.baseVal.getItem(0).matrix;
+	    xForm.f = yAxisSVGY + axisHeight / 2.0;
+
+	    /* Create new labels for y axis */
+	    mk_labels(cart.btm, cart.top, apply_y_coords, plotHeight / 4);
 	}
 
-	/* Convert Cartesian y to SVG y */
-	function cart_y_to_svg(cartY)
-	{
-	    var yTopSVG = plot.y.baseVal.value;
-	    var plotHeight = plot.height.baseVal.value;
-	    var cart = get_cart();
-	    var pxPerM = plotHeight / (cart.btm - cart.top);
-	    return yTopSVG + (cartY - cart.top) * pxPerM;
-	}
+	/*
+	   Produce a set of labels for coordinates ranging from lo to hi.
+	   apply_coords must be a function that creates the labels in the
+	   document and returns the amount of space they use. max_sz must
+	   specify the maximum amount of space they are allowed to use.
+	 */
 
-	/* Convert SVG y Cartesian y */
-	function svg_y_to_cart(svgY)
+	function mk_labels(lo, hi, apply_coords, max_sz)
 	{
-	    var yTopSVG = plot.y.baseVal.value;
-	    var plotHeight = plot.height.baseVal.value;
-	    var cart = get_cart();
-	    var mPerPx = (cart.btm - cart.top) / plotHeight;
-	    return cart.top + (svgY - yTopSVG) * mPerPx;
-	}
+	    /*
+	       Initialize dx with smallest power of 10 larger in magnitude
+	       than hi - lo. Decrease magnitude of dx. Place
+	       label set for the smaller dx into l1. If printing the labels
+	       in l1 would overflow the axis with characters, restore and
+	       use l0. Otherwise, replace l0 with l1 and retry with a
+	       smaller dx.
+	     */
 
-	/* Print x with precision prx, removing trailing "." and 0's */
-	function to_prx(x, prx)
-	{
-	    var s = x.toPrecision(prx);
-	    s = s.replace(/0+$/, "");
-	    return s.replace(/\.?$/, "");
+	    var dx, have_labels, l0, l1, t;
+
+	    if ( lo === hi ) {
+		apply_coords([l0]);
+		return;
+	    }
+	    if ( lo > hi ) {
+		t = hi;
+		hi = lo;
+		lo = t;
+	    }
+	    dx = Math.pow(10.0, Math.ceil(Math.log(hi - lo) / Math.LN10));
+	    for (have_labels = false; !have_labels; ) {
+		l1 = coord_list(lo, hi, dx);
+		if ( apply_coords(l1) > max_sz ) {
+		    apply_coords(l0);
+		    have_labels = true;
+		} else {
+		    l0 = l1;
+		}
+		dx *= 0.5;			/* If dx was 10, now it is 5 */
+		l1 = coord_list(lo, hi, dx);
+		if ( apply_coords(l1) > max_sz ) {
+		    apply_coords(l0);
+		    have_labels = true;
+		} else {
+		    l0 = l1;
+		}
+		dx *= 0.4;			/* If dx was 5, now it is 2 */
+		l1 = coord_list(lo, hi, dx);
+		if ( apply_coords(l1) > max_sz ) {
+		    apply_coords(l0);
+		    have_labels = true;
+		} else {
+		    l0 = l1;
+		}
+		dx *= 0.5;			/* If dx was 2, now it is 1 */
+	    }
 	}
 
 	/*
@@ -267,22 +619,6 @@ window.addEventListener("load", function (evt)
 		}
 	    }
 	    return coords;
-	}
-
-	/*
-	   Hide label, which must be a label object with text and tick elements.
-	   The elements still exist in the document.
-	 */ 
-
-	function hide_label(label)
-	{
-	    label.lbl.setAttribute("x", -80.0);
-	    label.lbl.setAttribute("y", -80.0);
-	    label.lbl.textContent = "";
-	    label.tick.setAttribute("x1", -80.0);
-	    label.tick.setAttribute("x2", -90.0);
-	    label.tick.setAttribute("y1", -80.0);
-	    label.tick.setAttribute("y2", -90.0);
 	}
 
 	/*
@@ -406,421 +742,60 @@ window.addEventListener("load", function (evt)
 	}
 
 	/*
-	   Produce a set of labels for coordinates ranging from lo to hi.
-	   apply_coords must be a function that creates the labels in the
-	   document and returns the amount of space they use. max_sz must
-	   specify the maximum amount of space they are allowed to use.
-	 */
+	   Hide label, which must be a label object with text and tick elements.
+	   The elements still exist in the document.
+	 */ 
 
-	function mk_labels(lo, hi, apply_coords, max_sz)
+	function hide_label(label)
 	{
-	    /*
-	       Initialize dx with smallest power of 10 larger in magnitude
-	       than hi - lo. Decrease magnitude of dx. Place
-	       label set for the smaller dx into l1. If printing the labels
-	       in l1 would overflow the axis with characters, restore and
-	       use l0. Otherwise, replace l0 with l1 and retry with a
-	       smaller dx.
-	     */
-
-	    var dx, have_labels, l0, l1, t;
-
-	    if ( lo === hi ) {
-		apply_coords([l0]);
-		return;
-	    }
-	    if ( lo > hi ) {
-		t = hi;
-		hi = lo;
-		lo = t;
-	    }
-	    dx = Math.pow(10.0, Math.ceil(Math.log(hi - lo) / Math.LN10));
-	    for (have_labels = false; !have_labels; ) {
-		l1 = coord_list(lo, hi, dx);
-		if ( apply_coords(l1) > max_sz ) {
-		    apply_coords(l0);
-		    have_labels = true;
-		} else {
-		    l0 = l1;
-		}
-		dx *= 0.5;			/* If dx was 10, now it is 5 */
-		l1 = coord_list(lo, hi, dx);
-		if ( apply_coords(l1) > max_sz ) {
-		    apply_coords(l0);
-		    have_labels = true;
-		} else {
-		    l0 = l1;
-		}
-		dx *= 0.4;			/* If dx was 5, now it is 2 */
-		l1 = coord_list(lo, hi, dx);
-		if ( apply_coords(l1) > max_sz ) {
-		    apply_coords(l0);
-		    have_labels = true;
-		} else {
-		    l0 = l1;
-		}
-		dx *= 0.5;			/* If dx was 2, now it is 1 */
-	    }
+	    label.lbl.setAttribute("x", -80.0);
+	    label.lbl.setAttribute("y", -80.0);
+	    label.lbl.textContent = "";
+	    label.tick.setAttribute("x1", -80.0);
+	    label.tick.setAttribute("x2", -90.0);
+	    label.tick.setAttribute("y1", -80.0);
+	    label.tick.setAttribute("y2", -90.0);
 	}
 
-	/* Label the plot axes. */
-	function update_axes ()
+	/* Convert Cartesian x to SVG x */
+	function cart_x_to_svg(cartX)
 	{
-	    var viewBox;		/* Axis viewBox */
-	    var plotWidth;		/* Plot width, SVG coordinates */
-	    var plotHeight;		/* Plot height, SVG coordinates */
-	    var axisWidth;		/* Axis width, SVG coordinates */
-	    var axisHeight;		/* Axis height, SVG coordinates */
-	    var cart;			/* Limits of plot in Cartesian
-					   coordinates */
-	    var xForm;			/* Transform to rotate y axis title */
-	    var lbl;			/* Label text element */
-	    var bbox;			/* Bounding box for lbl */
-
-	    plotWidth = plot.width.baseVal.value;
-	    plotHeight = plot.height.baseVal.value;
-	    cart = get_cart();
-
-	    /* Update font size and padding */
-	    lbl = document.getElementsByClassName("x axis label")[0];
-	    bbox = lbl.getBBox();
-	    font_sz = bbox.height;
-	    pad = xAxis.height.baseVal.value - tick_len - font_sz;
-
-	    /* Restore x axis position and update viewBox */
-	    xAxis.setAttribute("x", xAxisSVGX);
-	    xAxisSVGY = plotSVGY + plotHeight;
-	    xAxis.setAttribute("y", xAxisSVGY);
-	    axisWidth = plotWidth + xOverHang;
-	    axisHeight = xAxis.viewBox.baseVal.height;
-	    xAxis.setAttribute("width", axisWidth);
-	    xAxisClip.setAttribute("y", xAxisSVGY);
-	    xAxisClip.setAttribute("width", axisWidth);
-	    viewBox = xAxisSVGX;
-	    viewBox += " " + xAxisSVGY;
-	    viewBox += " " + axisWidth;
-	    viewBox += " " + axisHeight;
-	    xAxis.setAttribute("viewBox", viewBox);
-	    xTitle.setAttribute("x", xAxisSVGX + axisWidth / 2.0);
-	    xTitle.setAttribute("y", xAxisSVGY + axisHeight + pad + font_sz);
-
-	    /* Create new labels for x axis */
-	    mk_labels(cart.left, cart.rght, apply_x_coords, plotWidth / 4);
-
-	    /* Restore y axis position and update viewBox */
-	    yAxis.setAttribute("y", yAxisSVGY);
-	    axisWidth = yAxis.viewBox.baseVal.width;
-	    axisHeight = plotHeight + yOverHang;
-	    yAxis.setAttribute("height", axisHeight);
-	    yAxisClip.setAttribute("height", axisHeight);
-	    viewBox = yAxis.viewBox.baseVal.x;
-	    viewBox += " " + yAxisSVGY;
-	    viewBox += " " + axisWidth;
-	    viewBox += " " + axisHeight;
-	    yAxis.setAttribute("viewBox", viewBox);
-	    xForm = yTitleXForm.transform.baseVal.getItem(0).matrix;
-	    xForm.f = yAxisSVGY + axisHeight / 2.0;
-
-	    /* Create new labels for y axis */
-	    mk_labels(cart.btm, cart.top, apply_y_coords, plotHeight / 4);
-	}
-
-	/* Draw the background */
-	function update_background()
-	{
+	    var xLeftSVG = plot.x.baseVal.value;
+	    var plotWidth = plot.width.baseVal.value;
 	    var cart = get_cart();
-	    if ( cart.left < cart.rght ) {
-		plotBackground.setAttribute("x", cart.left);
-		plotBackground.setAttribute("width", cart.rght - cart.left);
-	    } else {
-		plotBackground.setAttribute("x", cart.rght);
-		plotBackground.setAttribute("width", cart.left - cart.rght);
-	    }
-	    if ( cart.btm < cart.top ) {
-		plotBackground.setAttribute("y", cart.btm);
-		plotBackground.setAttribute("height", cart.top - cart.btm);
-	    } else {
-		plotBackground.setAttribute("y", cart.top);
-		plotBackground.setAttribute("height", cart.btm - cart.top);
-	    }
+	    var pxPerM = plotWidth / (cart.rght - cart.left);
+	    return xLeftSVG + (cartX - cart.left) * pxPerM;
 	}
 
-	/*
-	   plot_drag is called at each mouse move while the plot is being
-	   dragged. It determines how much the mouse has moved since the last
-	   event, and shifts the dragable elements by that amount.
-	 */
-
-	function plot_drag(evt)
+	/* Convert SVG x Cartesian x */
+	function svg_x_to_cart(svgX)
 	{
-	    var dx, dy;			/* How much to move the elements */
-
-	    dx = evt.clientX - prevEvtSVGX;
-	    dy = evt.clientY - prevEvtSVGY;
-	    plot.setAttribute("x", plot.x.baseVal.value + dx);
-	    plot.setAttribute("y", plot.y.baseVal.value + dy);
-	    xAxis.setAttribute("x", xAxis.x.baseVal.value + dx);
-	    yAxis.setAttribute("y", yAxis.y.baseVal.value + dy);
-	    prevEvtSVGX = evt.clientX;
-	    prevEvtSVGY = evt.clientY;
-	}
-
-	/*
-	   end_plot_drag is called at mouse up. It determines how much the
-	   viewBox has changed since the start of the drag. It restores dragged
-	   elements to their initial coordinates, plotSVGX, plotSVGY, but with a
-	   new shifted viewBox.
-	 */
-
-	function end_plot_drag(evt)
-	{
-	    /*
-	       Compute total distance dragged, in CARTESIAN coordinates, and
-	       move plot viewBox by this amount
-	     */
-
-	    var plotWidth, plotHeight;	/* SVG dimensions of plot area */
-	    var cart;			/* Cartesian dimensions of plot area */
-	    var mPerPx;			/* Convert Cartesian distance to SVG */
-	    var dx, dy;			/* Drag distance in Cartesian
-					   coordinates */
-
-	    cart = get_cart();
-	    plotWidth = plot.width.baseVal.value;
-	    mPerPx = (cart.rght - cart.left) / plotWidth;
-	    dx = (dragSVGX0 - evt.clientX) * mPerPx;
-	    cart.left += dx;
-	    cart.rght += dx;
-	    plotHeight = plot.height.baseVal.value;
-	    mPerPx = (cart.btm - cart.top) / plotHeight;
-	    dy = (dragSVGY0 - evt.clientY) * mPerPx;
-	    cart.btm += dy;
-	    cart.top += dy;
-	    setXform(cart);
-
-	    /*
-	       Restore plot and background to their position at start of drag.
-	       Elements in the plot will remain in the positions they were
-	       dragged to because of the adjments to the viewBox.
-	     */
-
-	    plot.setAttribute("x", plotSVGX);
-	    plot.setAttribute("y", plotSVGY);
-
-	    update_background();
-	    update_axes();
-
-	    plot.removeEventListener("mousemove", plot_drag, false);
-	    plot.removeEventListener("mouseup", end_plot_drag, false);
-	}
-
-	/*
-	   start_plot_drag is called at mouse down. It records the location of
-	   the plot in its parent as members x0 and y0. It records the initial
-	   cursor location in dragSVGX0 and dragSVGY0, which remain constant
-	   throughout the drag. It also records the cursor location in members
-	   prevEvtSVGX and prevEvtSVGY, which change at every mousemove during the
-	   drag.
-	 */
-
-	function start_plot_drag(evt)
-	{
-	    prevEvtSVGX = dragSVGX0 = evt.clientX;
-	    prevEvtSVGY = dragSVGY0 = evt.clientY;
-	    plot.addEventListener("mousemove", plot_drag, false);
-	    plot.addEventListener("mouseup", end_plot_drag, false);
-	}
-
-	plot.addEventListener("mousedown", start_plot_drag, false);
-
-	/* Make interactive elements visible */
-	var e, elems = document.getElementsByClassName("interactive");
-	for (e = 0; e < elems.length; e++) {
-	    elems[e].setAttribute("visibility", "visible");
-	    elems[e].setAttribute("display", "inline");
-	}
-
-	/*
-	   Create a text element that displays the Cartesian coordinates
-	   of the cursor location.
-	 */
-
-	var cursor_loc = document.createElementNS(svgNs, "text");
-	cursor_loc.setAttribute("x", "120");
-	cursor_loc.setAttribute("y", "4");
-	cursor_loc.setAttribute("dominant-baseline", "hanging");
-	cursor_loc.textContent = "x y";
-	root.appendChild(cursor_loc);
-
-	function update_cursor_loc(evt)
-	{
-	    var x = svg_x_to_cart(evt.clientX);
-	    var y = svg_y_to_cart(evt.clientY);
-	    var txt = "Cursor: " + to_prx(x, x_prx) + " " + to_prx(y, x_prx);
-	    cursor_loc.textContent = txt;
-	}
-	plot.addEventListener("mousemove", update_cursor_loc, false);
-
-	/*
-	   This function applies zoom factor s to certain presentation
-	   attributes of element elem and its children. It is actually used
-	   to keep lines in the plot area from becoming thicker or thinner as
-	   the plot view zooms in and out.
-	 */
-
-	function zoom_attrs(elem, s)
-	{
-	    if ( elem.nodeType == Node.ELEMENT_NODE ) {
-		var attrs = ["stroke-width", "stroke-dashoffset",
-		    "markerWidth", "markerHeight"];
-		for (var n = 0; n < attrs.length; n++) {
-		    var a = Number(elem.getAttribute(attrs[n]));
-		    if ( a && a > 0.0 ) {
-			elem.setAttribute(attrs[n], a * s);
-		    }
-		}
-		a = Number(elem.getAttribute("stroke-dasharray"));
-		if ( a ) {
-		    var dash, dashes = "";
-		    for (dash in a.split(/\s+|,/)) {
-			dashes = dashes + " " + Number(dash) * s;
-		    }
-		    elem.setAttribute("stroke-dasharray", dashes);
-		}
-	    }
-	    var children = elem.childNodes;
-	    for (var c = 0; c < children.length; c++) {
-		zoom_attrs(children[c], s);
-	    }
-	}
-
-	/*
-	   This convenience function applies zoom factor s to the plot.
-	   s < 0 => zooming in, s > 0 => zooming out.
-	 */
-
-	function zoom_plot(s)
-	{
-	    var dx, dy;
+	    var xLeftSVG = plot.x.baseVal.value;
+	    var plotWidth = plot.width.baseVal.value;
 	    var cart = get_cart();
-
-	    /*
-	       If origin is at a corner, zoom about it.
-	       Otherwise, zoom about center.
-	     */
-
-	    dx = Math.abs(cart.rght - cart.left) / 128.0;
-	    dy = Math.abs(cart.top - cart.btm) / 128.0;
-	    if ( (Math.abs(cart.left) < dx || Math.abs(cart.rght) < dx)
-		    && (Math.abs(cart.btm) < dy || Math.abs(cart.top) < dy) ) {
-		cart.left *= s;
-		cart.rght *= s;
-		cart.btm *= s;
-		cart.top *= s;
-	    } else {
-		dx = (cart.rght - cart.left) * (1.0 - s) / 2.0;
-		cart.left += dx;
-		cart.rght -= dx;
-		dy = (cart.top - cart.btm) * (1.0 - s) / 2.0;
-		cart.btm += dy;
-		cart.top -= dy;
-	    }
-	    setXform(cart);
-	    for (var c = 0; c < plot.childNodes.length; c++) {
-		zoom_attrs(plot.childNodes[c], s);
-	    }
-	    update_background();
-	    update_axes();
+	    var mPerPx = (cart.rght - cart.left) / plotWidth;
+	    return cart.left + (svgX - xLeftSVG) * mPerPx;
 	}
 
-	/* Zoom controls */
-	zoom_in.addEventListener("click",
-		function (evt) { zoom_plot(3.0 / 4.0); }, false);
-	zoom_out.addEventListener("click", 
-		function (evt) { zoom_plot(4.0 / 3.0); }, false);
-
-	/*
-	   Grow plot if window resizes.
-	 */
-
-	function resize(evt)
+	/* Convert Cartesian y to SVG y */
+	function cart_y_to_svg(cartY)
 	{
-	    var innerWidth = this.innerWidth;
-	    var innerHeight = this.innerHeight;
-
-	    var currRootWidth = root.width.baseVal.value;
-	    var currRootHeight = root.height.baseVal.value;
-	    var newRootWidth = innerWidth;
-	    var newRootHeight = innerHeight
-
-		var currPlotWidth = plot.width.baseVal.value;
-	    var currPlotHeight = plot.height.baseVal.value;
-	    var newPlotWidth = newRootWidth - leftMgn - rghtMgn;
-	    var newPlotHeight = newRootHeight - topMgn - btmMgn;
-
+	    var yTopSVG = plot.y.baseVal.value;
+	    var plotHeight = plot.height.baseVal.value;
 	    var cart = get_cart();
-	    var mPerPx;
-	    var delta, dx, dy;
-
-	    /*
-	       If origin is at a corner, zoom about it.
-	       Otherwise, zoom about center.
-	     */
-
-	    dx = Math.abs(cart.rght - cart.left) / 128.0;
-	    dy = Math.abs(cart.top - cart.btm) / 128.0;
-	    if ( (Math.abs(cart.left) < dx || Math.abs(cart.rght) < dx)
-		    && (Math.abs(cart.btm) < dy || Math.abs(cart.top) < dy) ) {
-		delta = newRootWidth / currRootWidth;
-		cart.left *= delta;
-		cart.rght *= delta;
-		delta = newRootHeight / currRootHeight;
-		cart.btm *= delta;
-		cart.top *= delta;
-	    } else {
-
-		/* Update Cartesian limits using current plot rectangle */
-		mPerPx = (cart.rght - cart.left) / currPlotWidth;
-		delta = (newRootWidth - currRootWidth) * mPerPx;
-		cart.left -= delta / 2;
-		cart.rght += delta / 2;
-
-		mPerPx = (cart.top - cart.btm) / currPlotHeight;
-		delta = (newRootHeight - currRootHeight) * mPerPx;
-		cart.top += delta / 2;
-		cart.btm -= delta / 2;
-	    }
-
-	    /* Adjust plot rectangle */
-	    root.setAttribute("width", newRootWidth);
-	    root.setAttribute("height", newRootHeight);
-	    plot.setAttribute("width", newPlotWidth);
-	    plot.setAttribute("height", newPlotHeight);
-	    plotArea.setAttribute("width", newPlotWidth);
-	    plotArea.setAttribute("height", newPlotHeight);
-
-	    setXform(cart);
-	    update_background();
-	    update_axes();
-	}
-	if ( keep_margins ) {
-	    this.addEventListener("resize", resize, true);
+	    var pxPerM = plotHeight / (cart.btm - cart.top);
+	    return yTopSVG + (cartY - cart.top) * pxPerM;
 	}
 
-	/* Print button */
-	print.addEventListener("click", function (evt) {
-		root.removeChild(zoom_in);
-		root.removeChild(zoom_out);
-		root.removeChild(print);
-		root.removeChild(cursor_loc);
-		window.print();
-		window.setTimeout(function () {
-		    root.appendChild(zoom_in);
-		    root.appendChild(zoom_out);
-		    root.appendChild(print);
-		    root.appendChild(cursor_loc);
-		    }, 500.0);
-		}, false);
+	/* Convert SVG y Cartesian y */
+	function svg_y_to_cart(svgY)
+	{
+	    var yTopSVG = plot.y.baseVal.value;
+	    var plotHeight = plot.height.baseVal.value;
+	    var cart = get_cart();
+	    var mPerPx = (cart.btm - cart.top) / plotHeight;
+	    return cart.top + (svgY - yTopSVG) * mPerPx;
+	}
 
 	/*
 	   Redraw with javascript. This prevents sudden changes
