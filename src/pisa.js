@@ -88,7 +88,10 @@ window.addEventListener("load", function (evt)
 	var yAxisClip = document.getElementById("yAxisClipRect");
 	var yTitle = document.getElementById("yTitle");
 	var yTitleXForm = document.getElementById("yTitleTransform");
+	var zoom_in = document.getElementById("zoom_in");
+	var zoom_out = document.getElementById("zoom_out");
 	var print = document.getElementById("print");
+	var cursor_loc = document.getElementById("cursor_loc");
 
 	/*
 	   Axis labels:
@@ -150,17 +153,7 @@ window.addEventListener("load", function (evt)
 	    elems[e].setAttribute("display", "inline");
 	}
 
-	/*
-	   Create a text element that displays the Cartesian coordinates
-	   of the cursor location.
-	 */
-
-	var cursor_loc = document.createElementNS(svgNs, "text");
-	cursor_loc.setAttribute("x", "120");
-	cursor_loc.setAttribute("y", "4");
-	cursor_loc.setAttribute("dominant-baseline", "hanging");
-	cursor_loc.textContent = "x y";
-	root.appendChild(cursor_loc);
+	/* Display the Cartesian coordinates of cursor */ 
 	function update_cursor_loc(evt)
 	{
 	    var x = svg_x_to_cart(evt.clientX);
@@ -180,8 +173,6 @@ window.addEventListener("load", function (evt)
 	   become fat or thin as user zooms in or out.
 	 */
 
-	var zoom_in = document.getElementById("zoom_in");
-	var zoom_out = document.getElementById("zoom_out");
 	function zoom_plot(s)
 	{
 	    var dx, dy, corner;
