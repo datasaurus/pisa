@@ -108,13 +108,13 @@ do
 	    y_title="$OPTARG"
 	    ;;
 	p)
-	    prefix="$OPTARG"
+	    prefixes=${prefixes}"${prefixes:+|}$OPTARG"
 	    ;;
 	s)
-	    suffix="$OPTARG"
+	    suffixes=${suffixes}"${suffixes:+|}$OPTARG"
 	    ;;
 	y)
-	    style_sheets=${style_sheets}" $OPTARG"
+	    style_sheets=${style_sheets}"${style_sheets:+|}$OPTARG"
 	    ;;
 	\?)
 	    echo "$0: unknown option $OPTARG" 1>&2
@@ -136,16 +136,6 @@ then
 fi
 
 # Validate input
-if test $prefix && ! test -r $prefix
-then
-    echo "$0: no readable prefix file named $prefix" 1>&2
-    exit 1
-fi
-if test $suffix && ! test -r $suffix
-then
-    echo "$0: no readable suffix file named $suffix" 1>&2
-    exit 1
-fi
 x_left=$1; shift
 check_num "x coordinate at left side of plot" $x_left
 x_rght=$1; shift
@@ -157,10 +147,13 @@ check_num "y coordinate of top edge of plot" $y_top
 
 # Send information to pisa.awk
 {
-    for sheet in $style_sheets
-    do
-	echo style="$sheet"
-    done
+    {
+	IFS=\|;
+	for sheet in $style_sheets
+	do
+	    echo style="$sheet"
+	done;
+    }
     echo title="$title"
     echo x_left=$x_left
     echo x_rght=$x_rght
@@ -186,17 +179,17 @@ check_num "y coordinate of top edge of plot" $y_top
     echo font_sz=$font_sz
     echo x_prx=$x_prx
     echo y_prx=$y_prx
-    if test "$prefix"
+    if test "$prefixes"
     then
 	echo 'start_doc'
-	cat "$prefix"
+	{ IFS=\|; cat $prefixes; }
     fi
     echo 'start_plot'
     cat
     echo 'end_plot'
-    if test "$suffix"
+    if test "$suffixes"
     then
-	cat "$suffix"
+	{ IFS=\|; cat $suffixes; }
     fi
     echo 'end'
 } | pisa.awk
