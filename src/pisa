@@ -108,9 +108,11 @@ do
 	    y_title="$OPTARG"
 	    ;;
 	p)
+	    # Separate paths with | since path names can contain whitespace.
 	    prefixes=${prefixes}"${prefixes:+|}$OPTARG"
 	    ;;
 	s)
+	    # Separate paths with | since path names can contain whitespace.
 	    suffixes=${suffixes}"${suffixes:+|}$OPTARG"
 	    ;;
 	y)
