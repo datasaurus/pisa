@@ -1,2 +1,3 @@
+Get rid of title option. Title can be in optional prefix.
 Display cursor location only if document is scripted.
 Ensure y axis and y title are in document. Redefine left?
