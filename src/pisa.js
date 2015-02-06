@@ -132,17 +132,6 @@ window.addEventListener("load", function (evt)
 	var xOverHang = xAxis.width.baseVal.value - plot.width.baseVal.value;
 	var yOverHang = yAxis.height.baseVal.value - plot.height.baseVal.value;
 
-	/*
-	   Make "interactive" elements visible. pisa.awk initializes them as
-	   invisible so that they do not clutter static SVG documents.
-	 */
-
-	var e, elems = document.getElementsByClassName("interactive");
-	for (e = 0; e < elems.length; e++) {
-	    elems[e].setAttribute("visibility", "visible");
-	    elems[e].setAttribute("display", "inline");
-	}
-
 	/* Display the Cartesian coordinates of cursor */ 
 	function update_cursor_loc(evt)
 	{
