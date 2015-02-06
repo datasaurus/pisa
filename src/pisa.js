@@ -42,8 +42,21 @@ window.addEventListener("load", function (evt)
 	"use strict";
 	/*jslint browser:true */
 
+	/*
+	   If keep_margins is true, plot will resize with window to preserve
+	   margins. If false, plot will remain at size when loaded.
+
+	   If keep_margins is true, PLOT MUST BE AT TOP AND LEFT OF WINDOW.
+	   When plot is resized, it will leave winBtm pixels at bottom for
+	   other window elements. Elements within winBtm pixels of SVG bottom
+	   edge will always be visible. There may be lower elements, but they
+	   will disappear after a resize event, and must be scrolled into view.
+	 */
+
+	var keep_margins = true;
+	var winBtm = 120.0;
+
 	var svgNs = "http://www.w3.org/2000/svg";
-	var xlinkNs="http://www.w3.org/1999/xlink";
 
 	/* Lengths of axis tick marks, pixels */
 	var tick = (document.getElementsByClassName("x axis tick"))[0];
@@ -68,15 +81,8 @@ window.addEventListener("load", function (evt)
 	    return s.replace(/\.?$/, "");
 	}
 
-	/*
-	   If keep_margins is true, plot will resize with window to preserve
-	   margins. If false, plot will remain at prescribed size.
-	 */
-
-	var keep_margins = true;
-
 	/* Plot element objects */
-	var root = document.rootElement;
+	var outSVG = document.getElementById("outermost");
 	var plot = document.getElementById("plot");
 	var plotArea = document.getElementById("PlotRect");
 	var plotBackground = document.getElementById("plotBackground");
@@ -90,17 +96,6 @@ window.addEventListener("load", function (evt)
 	var yTitleXForm = document.getElementById("yTitleTransform");
 
 	/*
-	   Interactive elements, probably defined in pisa_buttons.svg,
-	   or a document derived from it, and included via a "-p" or "-s"
-	   option to the pisa command.
-	 */
-
-	var zoom_in = document.getElementById("zoom_in");
-	var zoom_out = document.getElementById("zoom_out");
-	var print = document.getElementById("print");
-	var cursor_loc = document.getElementById("cursor_loc");
-
-	/*
 	   Axis labels:
 	   For each axis there will be an array of objects.
 	   Each object will have as members:
@@ -111,18 +106,6 @@ window.addEventListener("load", function (evt)
 	var x_labels = [];
 	var y_labels = [];
 
-	/*
-	   Root element dimensions and margins around plot.
-	   These will be needed if root element resizes.
-	   rootWidth and rootHght might change. Margins will be preserved.
-	 */
-
-	var rootWidth = root.width.baseVal.value;
-	var rootHght = root.height.baseVal.value;
-	var leftMgn = plot.x.baseVal.value;
-	var rghtMgn = rootWidth - leftMgn - plot.width.baseVal.value;
-	var topMgn = plot.y.baseVal.value;
-	var btmMgn = rootHght - topMgn - plot.height.baseVal.value;
 
 	/*
 	   Coordinates of plot elements before and during drag events.
@@ -163,12 +146,17 @@ window.addEventListener("load", function (evt)
 	/* Display the Cartesian coordinates of cursor */ 
 	function update_cursor_loc(evt)
 	{
-	    var x = svg_x_to_cart(evt.clientX);
-	    var y = svg_y_to_cart(evt.clientY);
-	    var txt = "Cursor: " + to_prx(x, x_prx) + " " + to_prx(y, x_prx);
+	    var x, y, txt;
+
+	    x = svg_x_to_cart(evt.clientX);
+	    y = svg_y_to_cart(evt.clientY);
+	    txt = "Cursor: " + to_prx(x, x_prx) + " " + to_prx(y, x_prx);
 	    cursor_loc.textContent = txt;
 	}
-	plot.addEventListener("mousemove", update_cursor_loc, false);
+	var cursor_loc = document.getElementById("cursor_loc");
+	if ( cursor_loc ) {
+	    plot.addEventListener("mousemove", update_cursor_loc, false);
+	}
 
 	/*
 	   Enable zoom buttons.
@@ -239,46 +227,48 @@ window.addEventListener("load", function (evt)
 		zoom_attrs(children[c], s);
 	    }
 	}
-	zoom_in.addEventListener("click",
-		function (evt) { zoom_plot(3.0 / 4.0); }, false);
-	zoom_out.addEventListener("click", 
-		function (evt) { zoom_plot(4.0 / 3.0); }, false);
-
-	/* Enable the print button */
-	print.addEventListener("click", function (evt)
-	{
-		root.removeChild(zoom_in);
-		root.removeChild(zoom_out);
-		root.removeChild(print);
-		root.removeChild(cursor_loc);
-		window.print();
-		window.setTimeout(function () {
-		    root.appendChild(zoom_in);
-		    root.appendChild(zoom_out);
-		    root.appendChild(print);
-		    root.appendChild(cursor_loc);
-		    }, 500.0);
-		}, false);
+	var zoom_in = document.getElementById("zoom_in");
+	var zoom_out = document.getElementById("zoom_out");
+	if ( zoom_in && zoom_out ) {
+	    zoom_in.addEventListener("click",
+		    function (evt) { zoom_plot(3.0 / 4.0); }, false);
+	    zoom_out.addEventListener("click", 
+		    function (evt) { zoom_plot(4.0 / 3.0); }, false);
+	}
 
 	/*
-	   If desired, arrange to resize plot to preserve margins if
-	   window resizes.
+	   resize function adjusts plot to preserve original margins
+	   if window resizes. leftMgn, rghtMgn, topMgn, and btmMgn store the
+	   original margins.
+
+	   Assume, perhaps annoyingly, that svg outermost element fills window
+	   from to right and to bottom. Window elements to the right of and
+	   below svg outermost element will be out of display unless user
+	   scrolls.
+
+	   However, adjust for elements above and to the left of svg outermost.
 	*/
 
+	var leftMgn = plot.x.baseVal.value;
+	var rghtMgn = outSVG.width.baseVal.value - leftMgn
+	    - plot.width.baseVal.value;
+	var topMgn = plot.y.baseVal.value;
+	var btmMgn = outSVG.height.baseVal.value - topMgn
+	    - plot.height.baseVal.value;
 	function resize(evt)
 	{
-	    var innerWidth = this.innerWidth;
-	    var innerHeight = this.innerHeight;
+	    var winWidth = this.innerWidth;
+	    var winHeight = this.innerHeight;
 
-	    var currRootWidth = root.width.baseVal.value;
-	    var currRootHeight = root.height.baseVal.value;
-	    var newRootWidth = innerWidth;
-	    var newRootHeight = innerHeight;
+	    var currSVGWidth = outSVG.width.baseVal.value;
+	    var currSVGHeight = outSVG.height.baseVal.value;
+	    var newSVGWidth = winWidth;
+	    var newSVGHeight = winHeight - winBtm;
 
 	    var currPlotWidth = plot.width.baseVal.value;
 	    var currPlotHeight = plot.height.baseVal.value;
-	    var newPlotWidth = newRootWidth - leftMgn - rghtMgn;
-	    var newPlotHeight = newRootHeight - topMgn - btmMgn;
+	    var newPlotWidth = newSVGWidth - leftMgn - rghtMgn;
+	    var newPlotHeight = newSVGHeight - topMgn - btmMgn;
 
 	    var cart = get_cart();
 	    var mPerPx;
@@ -294,26 +284,26 @@ window.addEventListener("load", function (evt)
 	    corner = ( (Math.abs(cart.left) < dx || Math.abs(cart.rght) < dx)
 		    && (Math.abs(cart.btm) < dy || Math.abs(cart.top) < dy) );
 	    if ( corner ) {
-		delta = newRootWidth / currRootWidth;
+		delta = newSVGWidth / currSVGWidth;
 		cart.left *= delta;
 		cart.rght *= delta;
-		delta = newRootHeight / currRootHeight;
+		delta = newSVGHeight / currSVGHeight;
 		cart.btm *= delta;
 		cart.top *= delta;
 	    } else {
 		mPerPx = (cart.rght - cart.left) / currPlotWidth;
-		delta = (newRootWidth - currRootWidth) * mPerPx;
+		delta = (newSVGWidth - currSVGWidth) * mPerPx;
 		cart.left -= delta / 2;
 		cart.rght += delta / 2;
 		mPerPx = (cart.top - cart.btm) / currPlotHeight;
-		delta = (newRootHeight - currRootHeight) * mPerPx;
+		delta = (newSVGHeight - currSVGHeight) * mPerPx;
 		cart.top += delta / 2;
 		cart.btm -= delta / 2;
 	    }
 
 	    /* Adjust plot rectangle */
-	    root.setAttribute("width", newRootWidth);
-	    root.setAttribute("height", newRootHeight);
+	    outSVG.setAttribute("width", newSVGWidth);
+	    outSVG.setAttribute("height", newSVGHeight);
 	    plot.setAttribute("width", newPlotWidth);
 	    plot.setAttribute("height", newPlotHeight);
 	    plotArea.setAttribute("width", newPlotWidth);
@@ -809,12 +799,15 @@ window.addEventListener("load", function (evt)
 	}
 	if ( keep_margins ) {
 	    var cart = get_cart();
-	    root.setAttribute("width", this.innerWidth);
-	    root.setAttribute("height", this.innerHeight);
-	    plot.setAttribute("width", this.innerWidth - leftMgn - rghtMgn);
-	    plot.setAttribute("height", this.innerHeight - topMgn - btmMgn);
-	    plotArea.setAttribute("width", this.innerWidth - leftMgn - rghtMgn);
-	    plotArea.setAttribute("height", this.innerHeight - topMgn - btmMgn);
+	    var winWidth = this.innerWidth;
+	    var winHght = this.innerHeight;
+
+	    outSVG.setAttribute("width", winWidth);
+	    outSVG.setAttribute("height", winHght - winBtm);
+	    plot.setAttribute("width", winWidth - leftMgn - rghtMgn);
+	    plot.setAttribute("height", winHght - winBtm - topMgn - btmMgn);
+	    plotArea.setAttribute("width", winWidth - leftMgn - rghtMgn);
+	    plotArea.setAttribute("height", winHght - winBtm - topMgn - btmMgn);
 	    setXform(cart);
 	    update_background();
 	}
