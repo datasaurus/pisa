@@ -42,20 +42,6 @@ window.addEventListener("load", function (evt)
 	"use strict";
 	/*jslint browser:true */
 
-	/*
-	   If keep_margins is true, plot will resize with window to preserve
-	   margins. If false, plot will remain at size when loaded.
-
-	   If keep_margins is true, PLOT MUST BE AT TOP AND LEFT OF WINDOW.
-	   When plot is resized, it will leave winBtm pixels at bottom for
-	   other window elements. Elements within winBtm pixels of SVG bottom
-	   edge will always be visible. There may be lower elements, but they
-	   will disappear after a resize event, and must be scrolled into view.
-	 */
-
-	var keep_margins = true;
-	var winBtm = 120.0;
-
 	var svgNs = "http://www.w3.org/2000/svg";
 
 	/* Lengths of axis tick marks, pixels */
@@ -81,7 +67,7 @@ window.addEventListener("load", function (evt)
 	    return s.replace(/\.?$/, "");
 	}
 
-	/* Plot element objects */
+	/* Plot elements */
 	var outSVG = document.getElementById("outermost");
 	var plot = document.getElementById("plot");
 	var plotArea = document.getElementById("PlotRect");
@@ -94,6 +80,33 @@ window.addEventListener("load", function (evt)
 	var yAxisClip = document.getElementById("yAxisClipRect");
 	var yTitle = document.getElementById("yTitle");
 	var yTitleXForm = document.getElementById("yTitleTransform");
+
+	/* Interective elements */
+	var cursor_loc = document.getElementById("cursor_loc");
+	var zoom_in = document.getElementById("zoom_in");
+	var zoom_out = document.getElementById("zoom_out");
+
+	/*
+	   If keep_margins is true, plot will resize with window to preserve
+	   margins. If false, plot will remain at size when loaded.
+
+	   If keep_margins is true, PLOT MUST BE AT TOP AND LEFT OF WINDOW.
+	   When plot is resized, it will leave winBtm pixels at bottom for
+	   other window elements. Elements within winBtm pixels of SVG bottom
+	   edge will always be visible. There may be lower elements, but they
+	   will disappear after a resize event, and must be scrolled into view.
+
+	   Set winBtm to size of interactive area.
+	 */
+
+	var keep_margins = true;
+	var winBtm = 60.0;
+	if ( zoom_in ) {
+	    winBtm += zoom_in.clientHeight;
+	}
+	if ( cursor_loc ) {
+	    winBtm += cursor_loc.clientHeight;
+	}
 
 	/*
 	   Axis labels:
@@ -142,7 +155,6 @@ window.addEventListener("load", function (evt)
 	    txt = "Cursor: " + to_prx(x, x_prx) + " " + to_prx(y, x_prx);
 	    cursor_loc.textContent = txt;
 	}
-	var cursor_loc = document.getElementById("cursor_loc");
 	if ( cursor_loc ) {
 	    plot.addEventListener("mousemove", update_cursor_loc, false);
 	}
@@ -216,8 +228,6 @@ window.addEventListener("load", function (evt)
 		zoom_attrs(children[c], s);
 	    }
 	}
-	var zoom_in = document.getElementById("zoom_in");
-	var zoom_out = document.getElementById("zoom_out");
 	if ( zoom_in && zoom_out ) {
 	    zoom_in.addEventListener("click",
 		    function (evt) { zoom_plot(3.0 / 4.0); }, false);
@@ -226,16 +236,9 @@ window.addEventListener("load", function (evt)
 	}
 
 	/*
-	   resize function adjusts plot to preserve original margins
+	   resize function resizes plot to preserve original margins
 	   if window resizes. leftMgn, rghtMgn, topMgn, and btmMgn store the
 	   original margins.
-
-	   Assume, perhaps annoyingly, that svg outermost element fills window
-	   from to right and to bottom. Window elements to the right of and
-	   below svg outermost element will be out of display unless user
-	   scrolls.
-
-	   However, adjust for elements above and to the left of svg outermost.
 	*/
 
 	var leftMgn = plot.x.baseVal.value;
@@ -787,20 +790,8 @@ window.addEventListener("load", function (evt)
 	    yAxis.removeChild(yAxis.lastChild);
 	}
 	if ( keep_margins ) {
-	    var cart = get_cart();
-	    var winWidth = this.innerWidth;
-	    var winHght = this.innerHeight;
-
-	    outSVG.setAttribute("width", winWidth);
-	    outSVG.setAttribute("height", winHght - winBtm);
-	    plot.setAttribute("width", winWidth - leftMgn - rghtMgn);
-	    plot.setAttribute("height", winHght - winBtm - topMgn - btmMgn);
-	    plotArea.setAttribute("width", winWidth - leftMgn - rghtMgn);
-	    plotArea.setAttribute("height", winHght - winBtm - topMgn - btmMgn);
-	    setXform(cart);
-	    update_background();
+	    resize.call(this, {});
 	}
-	update_axes();
 
 	}, false);			/* Done defining load callback */
 
